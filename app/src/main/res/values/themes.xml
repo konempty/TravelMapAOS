@@ -1,0 +1,4 @@
+<resources>
+    <!-- Base application theme. -->
+    <style name="Theme.GPSTracker" parent="Theme.AppCompat.Light.NoActionBar"></style>
+</resources>
