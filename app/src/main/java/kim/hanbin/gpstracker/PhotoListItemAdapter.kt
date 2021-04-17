@@ -11,13 +11,16 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.io.FileNotFoundException
 
 class PhotoListItemAdapter(
-    val list: MutableList<EventData>,
-    val context: Activity,
+    val list: List<BaseData>,
+    val context: Context,
+    val isActivity:Boolean,
     val listener: (ViewHolder) -> Unit
 ) :
     RecyclerView.Adapter<PhotoListItemAdapter.ViewHolder>() {
@@ -28,7 +31,7 @@ class PhotoListItemAdapter(
     ) :
         RecyclerView.ViewHolder(itemView) {
         var img: ImageView = itemView.findViewById(R.id.image)
-        lateinit var item: EventData
+        lateinit var item: BaseData
 
         init {
             itemView.setOnClickListener { listener(this) }
@@ -72,10 +75,15 @@ class PhotoListItemAdapter(
                 }
         } catch (e: FileNotFoundException) {
 
-            GlobalScope.launch {
+            CoroutineScope(Dispatchers.IO).launch {
+                if (it is EventData) {
 
-                val db = InnerDB.getInstance(context)
-                db.delete(it.id!!)
+                    val db = InnerDB.getInstance(context)
+                    db.delete(it.id!!)
+                } else if (it is PhotoData) {
+                    val db = InnerDB.getPhotoInstance(context)
+                    db.delete(it.id!!)
+                }
 
             }
         } catch (e: Exception) {
@@ -83,8 +91,8 @@ class PhotoListItemAdapter(
     }
 
     override fun getItemCount(): Int {
-        if (list.size == 0)
-            context.finish()
+        if (list.isEmpty() &&isActivity)
+            (context as Activity).finish()
         return list.size
     }
 

@@ -37,7 +37,16 @@ class PhotoActivity : AppCompatActivity() {
         val id = intent.getLongExtra("id", 0)
         binding.pager.adapter = pagerAdapter
         for (i in 0 until PhotoListActivity.photoList.size) {
-            if (PhotoListActivity.photoList[i].id == id) {
+            val item = PhotoListActivity.photoList[i]
+            val item_id = if (item is EventData) {
+                item.pictureId
+            } else if (item is PhotoData) {
+                item.id
+            } else {
+                0
+            }
+
+            if (item_id == id) {
                 binding.pager.currentItem = i
                 break
             }

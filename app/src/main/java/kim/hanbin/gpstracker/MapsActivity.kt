@@ -26,6 +26,7 @@ import com.google.maps.android.ktx.utils.sphericalDistance
 import kim.hanbin.gpstracker.databinding.ActivityMapsBinding
 import kotlinx.coroutines.*
 import java.io.FileNotFoundException
+import java.util.*
 import kotlin.math.acos
 import kotlin.math.cos
 import kotlin.math.sin
@@ -39,22 +40,24 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var mMap: GoogleMap
     private lateinit var clusterManager: ClusterManager<MyItem>
     var trackingNum: Int = 0
-    lateinit var db: EventDao
+    val db: EventDao by lazy{InnerDB.getInstance(this@MapsActivity)}
     var zoomlevel = 0
     var angle = 0f
     var nextIdx = 0
-    var lastLoc: LatLng? = null
+    lateinit var lastLoc: LatLng
     var isDiscrete = true
     var isAuto = true
     var isPause = true
+    var isStop = true
     val zoomLevels = arrayOf(20f, 18f, 16f)
     var speed = 1
-    lateinit var centerMarker: Marker
+    var centerMarker: Marker? = null
+    var isAccuratePoint = true
     var bottomSheetBehavior: BottomSheetBehavior<View>? = null
 
     companion object {
 
-        val clusterList = mutableListOf<EventData>()
+        val clusterList = mutableListOf<BaseData>()
     }
 
 
@@ -69,7 +72,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        db = InnerDB.getInstance(this@MapsActivity)
+
         trackingNum = intent.getIntExtra("trackingNum", 0)
         bottomSheetBehavior = BottomSheetBehavior.from(binding.bottomNavigationContainer)
 
@@ -93,10 +96,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
             }
         })
-        binding.root
         binding.root.post {
             val param = binding.bottomNavigationContainer.layoutParams
-            param.height = (binding.root.height * 0.8).toInt()
+            param.height = (binding.root.height * 0.5).toInt()
             binding.bottomNavigationContainer.layoutParams = param
 
 
@@ -121,8 +123,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         })
         binding.startBtn.setOnClickListener {
             isPause = !isPause
-            if (lastLoc == null) {
+            if (isStop) {
                 binding.startBtn.setImageResource(R.drawable.ic_baseline_pause_96)
+                isStop = false
+                getStartPoint()
                 nextTracking()
             } else if (isPause) {
                 binding.startBtn.setImageResource(R.drawable.ic_baseline_play_arrow_96)
@@ -130,6 +134,179 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             } else {
                 binding.startBtn.setImageResource(R.drawable.ic_baseline_pause_96)
                 resumeAnimation()
+            }
+        }
+        binding.fowardBtn.setOnClickListener {
+            mMap.stopAnimation()
+            if (nextIdx != trackingLogs.size) {
+                val item = trackingLogs[nextIdx - 1]
+
+
+                val cameraPosition = CameraUpdateFactory.newCameraPosition(
+                    if (isAuto) {
+
+                        angle = bearing(
+                            lastLoc.latitude,
+                            lastLoc.longitude,
+                            item.latLng!!.latitude,
+                            item.latLng!!.longitude
+                        )
+
+                        CameraPosition.Builder().bearing(angle).zoom(zoomLevels[zoomlevel])
+                            .tilt(90F)
+
+                    } else {
+                        CameraPosition.Builder()
+                    }.target(item.latLng).build()
+                )
+                mMap.moveCamera(cameraPosition)
+                lastLoc = item.latLng!!
+                centerMarker!!.position = lastLoc
+                isAccuratePoint = true
+
+
+
+                nextTracking()
+            }
+        }
+        binding.backwardBtn.setOnClickListener {
+            mMap.stopAnimation()
+            isStop = false
+            val back = if (isAccuratePoint) {
+                2
+            } else {
+                1
+            } //얼마만큼 이전으로 돌아가서 찾아야 하는지
+            var item = trackingLogs[nextIdx - back]
+            for (idx in nextIdx - back downTo 0) {
+                val item2 = trackingLogs[idx]
+                if (item2.eventNum == 3) {
+                    item = item2
+                    break;
+                }
+                nextIdx--
+            }
+            val isFound = arrayListOf(false, false, false) //0: 이전 GPS찾음 1:이전과 그 전의 GPS찾음 2: 줌레벨 찾음
+            var prevItem: EventData = item
+            var isDiscrete = false
+            for (idx in nextIdx - back - 1 downTo 0) {
+                val item2 = trackingLogs[idx]
+                if (item2.eventNum == 3) {
+                    if (isFound[0]) {
+                        if (!isFound[1]) {
+                            isFound[1] = true
+                            if (!isDiscrete)
+                                angle = bearing(
+                                    item2.lat!!,
+                                    item2.lng!!,
+                                    prevItem.lat!!,
+                                    prevItem.lng!!
+                                )
+                            if (isFound[2]) {
+                                break;
+                            }
+                        }
+                    } else {
+                        nextIdx = idx + 1
+                        prevItem = item2
+                        isFound[0] = true
+                    }
+                } else if (item2.eventNum == 4) {
+                    if (isFound[0] && !isFound[2]) {
+                        isFound[2] = true
+                        zoomlevel = item2.trackingSpeed!!
+                        if (isFound[1])
+                            break
+                    }
+                } else {
+                    if (idx == 0 && isPause) {
+
+                        isStop = true
+                    }
+                    isDiscrete = true
+                }
+            }
+            val cameraPosition = CameraUpdateFactory.newCameraPosition(
+                if (isAuto) {
+
+
+                    CameraPosition.Builder().bearing(angle)
+                        .zoom(zoomLevels[zoomlevel]).tilt(90F)
+
+                } else {
+                    CameraPosition.Builder()
+                }.target(prevItem.latLng).build()
+            )
+            mMap.moveCamera(cameraPosition)
+            lastLoc = prevItem.latLng!!
+            centerMarker!!.position = lastLoc
+            isAccuratePoint = true
+            nextTracking()
+        }
+        binding.speed1.setOnClickListener {
+            changeSpeed(0)
+        }
+        binding.speed2.setOnClickListener {
+            changeSpeed(1)
+        }
+        binding.speed5.setOnClickListener {
+            changeSpeed(2)
+        }
+        binding.speed10.setOnClickListener {
+            changeSpeed(3)
+        }
+        changeColor(0)
+    }
+
+    fun getStartPoint() {
+        nextIdx = 0
+        isDiscrete = false
+
+        for (item in trackingLogs) {
+            nextIdx++
+            if (item.eventNum == 3) {
+                lastLoc = item.latLng!!
+                centerMarker?.remove()
+                centerMarker = mMap.addMarker(
+                    MarkerOptions()
+                        .position(item.latLng!!)
+                )
+                for (idx in nextIdx until trackingLogs.size) {
+                    if (trackingLogs[idx].eventNum == 3) {
+                        nextIdx = idx
+                        val item2 = trackingLogs[idx]
+                        angle = bearing(
+                            lastLoc.latitude,
+                            lastLoc.longitude,
+                            item2.lat!!,
+                            item2.lng!!
+                        )
+                        break
+                    } else if (item.eventNum == 4) {
+                        zoomlevel = item.trackingSpeed!!
+
+                    } else {
+                        isDiscrete = true
+                    }
+                }
+                val camera = CameraUpdateFactory.newCameraPosition(
+                    if (isAuto) {
+
+                        CameraPosition.Builder().bearing(angle)
+                            .zoom(zoomLevels[zoomlevel]).tilt(90F)
+
+                    } else {
+                        CameraPosition.Builder()
+                    }.target(lastLoc).build()
+                )
+
+
+                mMap.moveCamera(camera)
+
+                break
+            } else if (item.eventNum == 4) {
+                zoomlevel = item.trackingSpeed!!
+
             }
         }
     }
@@ -156,12 +333,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             for (it in it.items.sortedWith(compareBy<MyItem> { it.item.time })) {
                 clusterList.add(it.item)
             }
-            clusterList.sortByDescending { it.time }
+            clusterList.sortByDescending { (it as EventData).time }
             startActivity(
                 Intent(
                     this,
                     PhotoListActivity::class.java
-                ).putExtra("name", "Gallery Place/")
+                )
             )
             true
         }
@@ -172,7 +349,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 Intent(
                     this,
                     PhotoListActivity::class.java
-                ).putExtra("name", "Gallery Place/")
+                )
             )
             true
         }
@@ -183,7 +360,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         mMap.setOnCameraMoveListener {
             //println(mMap!!.cameraPosition.zoom)
 
-            centerMarker.position = mMap.cameraPosition.target
+            centerMarker!!.position = mMap.cameraPosition.target
+            if (!isPause)
+                isAccuratePoint = false
         }
         val uiSetting = mMap.uiSettings
         uiSetting.isTiltGesturesEnabled = false
@@ -197,36 +376,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     fun initCluster() {
 
         clusterManager.clearItems()
-        var i = 0
         var polylineOptions = PolylineOptions()
 
-        GlobalScope.launch {
+        CoroutineScope(Dispatchers.IO).launch {
             eventList = db.getTrackingLog(trackingNum)
-            MainScope().launch {
-                for (item in eventList) {
-                    if (item.eventNum == 3) {
-                        centerMarker = mMap.addMarker(
-                            MarkerOptions()
-                                .position(item.latLng)
-                        )
-                        val camera =
-                            CameraPosition.Builder().target(item.latLng).tilt(90F)
-                                .zoom(zoomLevels[1])
-
-
-                        mMap.moveCamera(
-                            CameraUpdateFactory.newCameraPosition(camera.build())
-                        )
-                        break
-                    }
-                }
-            }
-            delay(200)
 
 
             for (item in eventList) {
                 when (item.eventNum) {
-                    1 -> {
+                    0 -> {
                         MainScope().launch {
                             mMap.addPolyline(polylineOptions)
                             polylineOptions = PolylineOptions()
@@ -259,7 +417,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                             )
                         } catch (e: FileNotFoundException) {
 
-                            GlobalScope.async {
+                            CoroutineScope(Dispatchers.IO).launch {
 
                                 db.delete(item.id!!)
 
@@ -278,6 +436,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 mMap.addPolyline(polylineOptions)
                 polylineOptions = PolylineOptions()
                 clusterManager.cluster()
+                getStartPoint()
+
+                binding.cover.visibility = View.GONE
             }
         }
 
@@ -286,62 +447,70 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     fun nextTracking() {
         if (nextIdx == trackingLogs.size) {
-            lastLoc = null
+            isStop = true
             isPause = true
-            nextIdx = 0
             binding.startBtn.setImageResource(R.drawable.ic_baseline_play_arrow_96)
+            isAccuratePoint = true
             return
         }
         val item = trackingLogs[nextIdx]
 
         nextIdx++
         when (item.eventNum) {
-            1 -> {
+            0 -> {
                 isDiscrete = true
                 nextTracking()
             }
             3 -> {
-                val animateTime =
 
-                    if (isDiscrete) {
-                        isDiscrete = false
-                        1
-
-                    } else {
-                        3000 / speed
-                    }
                 if (!isPause) {
+
                     MainScope().launch {
-                        if (isAuto && lastLoc != null) {
-                            delay(100)
+                        val animateTime =
 
-                            angle = bearing(
-                                lastLoc!!.latitude,
-                                lastLoc!!.longitude,
-                                item.latLng.latitude,
-                                item.latLng.longitude
-                            )
-                            mMap.animateCamera(
-                                CameraUpdateFactory.newCameraPosition(
-                                    CameraPosition.Builder().target(lastLoc).bearing(angle)
-                                        .zoom(zoomLevels[zoomlevel]).tilt(90F).build()
-                                ),
-                                1000 / speed,
-                                null
-                            )
+                            if (isDiscrete) {
+                                isDiscrete = false
+                                1
 
-                            delay((500 / speed).toLong())
-                        }
-                        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(
-                            CameraPosition.Builder().target(item.latLng).bearing(angle)
-                                .zoom(zoomLevels[zoomlevel]).tilt(90F).build()
-                        ),
+                            } else {
+                                3000 / speed
+                            }
+                        delay(100)
+                        val cameraPosition = CameraUpdateFactory.newCameraPosition(
+                            if (isAuto) {
+                                if (!isDiscrete) {
+
+                                    angle = bearing(
+                                        lastLoc.latitude,
+                                        lastLoc.longitude,
+                                        item.lat!!,
+                                        item.lng!!
+                                    )
+                                    mMap.animateCamera(
+                                        CameraUpdateFactory.newCameraPosition(
+                                            CameraPosition.Builder().target(lastLoc).bearing(angle)
+                                                .zoom(zoomLevels[zoomlevel]).tilt(90F).build()
+                                        ),
+                                        1000 / speed,
+                                        null
+                                    )
+
+                                    delay((500 / speed).toLong())
+                                }
+                                CameraPosition.Builder().target(item.latLng).bearing(angle)
+                                    .zoom(zoomLevels[zoomlevel]).tilt(90F)
+                            } else {
+                                CameraPosition.Builder().target(item.latLng)
+                            }.build()
+                        )
+                        mMap.animateCamera(
+                            cameraPosition,
 
                             animateTime,
                             object :
                                 GoogleMap.CancelableCallback {
                                 override fun onFinish() {
-                                    lastLoc = item.latLng
+                                    lastLoc = item.latLng!!
                                     nextTracking()
                                 }
 
@@ -368,7 +537,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
 
         override fun getPosition(): LatLng {
-            return item.latLng
+            return item.latLng!!
         }
 
         override fun getTitle(): String {
@@ -464,6 +633,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             marker.setIcon(BitmapDescriptorFactory.fromBitmap(loadBitmapFromView(view)))
         }
 
+
         fun loadBitmapFromView(view: View): Bitmap? {
             val returnedBitmap =
                 Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
@@ -516,12 +686,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
 
     fun pauseAnimation() {
-        isPause = true
         mMap.stopAnimation()
     }
 
     fun resumeAnimation() {
-        isPause = false
         var destLoc: LatLng? = null
         for (i in nextIdx - 1 until trackingLogs.size) {
             if (trackingLogs[i].eventNum == 3) {
@@ -531,7 +699,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
         if (destLoc != null) {
             MainScope().launch {
-                val orgDist = lastLoc!!.sphericalDistance(destLoc)
+                if (isPause)
+                    return@launch
+                val orgDist = lastLoc.sphericalDistance(destLoc)
                 val currDist = mMap.cameraPosition.target.sphericalDistance(destLoc)
                 var animateTime =
                     if (isDiscrete) {
@@ -546,8 +716,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 if (isAuto && ratio > 0.5) {
 
                     angle = bearing(
-                        lastLoc!!.latitude,
-                        lastLoc!!.longitude,
+                        lastLoc.latitude,
+                        lastLoc.longitude,
                         destLoc.latitude,
                         destLoc.longitude
                     )
@@ -555,7 +725,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     val time = (1000 / speed * ratio / 0.5).toLong()
                     mMap.animateCamera(
                         CameraUpdateFactory.newCameraPosition(
-                            CameraPosition.Builder().target(destLoc).bearing(angle)
+                            CameraPosition.Builder().target(mMap.cameraPosition.target)
+                                .bearing(angle)
                                 .zoom(zoomLevels[zoomlevel]).tilt(90F).build()
                         ),
                         time.toInt(),
@@ -564,7 +735,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
                     delay(time - 500 / speed)
                 } else {
-                    animateTime = (animateTime * currDist / orgDist / 0.5).toInt()
+                    animateTime = (animateTime * currDist / orgDist / 0.5).toInt().coerceAtLeast(1)
                 }
                 mMap.animateCamera(CameraUpdateFactory.newCameraPosition(
                     CameraPosition.Builder().target(destLoc).bearing(angle)
@@ -585,5 +756,30 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     })
             }
         }
+    }
+
+    override fun onBackPressed() {
+        if (bottomSheetBehavior!!.state == BottomSheetBehavior.STATE_EXPANDED) {
+            bottomSheetBehavior!!.state = BottomSheetBehavior.STATE_COLLAPSED
+            return
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+    fun changeSpeed(speed: Int) {
+        val speeds = arrayListOf(1, 2, 5, 10)
+        pauseAnimation()
+        this.speed = speeds[speed]
+        resumeAnimation()
+        changeColor(speed)
+    }
+
+    fun changeColor(speed: Int) {
+        val btns = arrayListOf(binding.speed1, binding.speed2, binding.speed5, binding.speed10)
+        for (btn in btns) {
+            btn.background = null
+        }
+        btns[speed].setBackgroundColor(Color.YELLOW)
     }
 }

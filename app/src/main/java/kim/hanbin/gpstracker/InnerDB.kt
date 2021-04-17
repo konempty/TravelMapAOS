@@ -6,19 +6,30 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
-@Database(entities = [EventData::class], version = 1)
+@Database(entities = [EventData::class, PhotoData::class], version = 1)
 @TypeConverters(Converters::class)
 abstract class InnerDB : RoomDatabase() {
     abstract fun eventDao(): EventDao?
+    abstract fun photoDataDao(): PhotoDataDao?
 
     companion object {
-        private var inst: EventDao? = null
+        private var Eventinst: EventDao? = null
+        private var Photoinst: PhotoDataDao? = null
+
         fun getInstance(context: Context): EventDao {
-            if (inst == null) {
-                inst = Room.databaseBuilder(context, InnerDB::class.java, "My bee").build()
+            if (Eventinst == null) {
+                Eventinst = Room.databaseBuilder(context, InnerDB::class.java, "Travel Map").build()
                     .eventDao()
             }
-            return inst!!
+            return Eventinst!!
+        }
+
+        fun getPhotoInstance(context: Context): PhotoDataDao {
+            if (Photoinst == null) {
+                Photoinst = Room.databaseBuilder(context, InnerDB::class.java, "Travel Map").build()
+                    .photoDataDao()
+            }
+            return Photoinst!!
         }
     }
 }

@@ -8,7 +8,7 @@ import kim.hanbin.gpstracker.databinding.ActivityPhotoListBinding
 
 class PhotoListActivity : AppCompatActivity() {
     companion object {
-        lateinit var photoList: MutableList<EventData>
+        lateinit var photoList: List<BaseData>
     }
 
     private var mBinding: ActivityPhotoListBinding? = null
@@ -18,16 +18,26 @@ class PhotoListActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         mBinding = ActivityPhotoListBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        //  val name = intent.getStringExtra("name")
+        val name = intent.getStringExtra("name")
         binding.recyclerView.layoutManager = GridLayoutManager(this, 3)
-        // if (name == "Gallery Place/") {
-        photoList = MapsActivity.clusterList
-        /* } else {
-             photoList = PictureService.imageListMap[name]!!
-         }*/
-        binding.recyclerView.adapter = PhotoListItemAdapter(photoList, this) {
+        if (name == null) {
+            photoList = MapsActivity.clusterList
+        } else if(name=="\\"){
+            photoList = MapFragment.clusterList
+        }else {
+            photoList = PhotoService.imageListMap[name]!!
+        }
+        binding.recyclerView.adapter = PhotoListItemAdapter(photoList, this,true) {
+            val item = it.item
+            val id = if (item is EventData) {
+                item.pictureId
+            } else if (item is PhotoData) {
+                item.id
+            } else {
+                0
+            }
             startActivity(
-                Intent(this, PhotoActivity::class.java).putExtra("id", it.item.id)
+                Intent(this, PhotoActivity::class.java).putExtra("id", id)
             )
         }
         //val splts = name!!.split("/")

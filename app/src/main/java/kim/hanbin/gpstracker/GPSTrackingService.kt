@@ -15,6 +15,8 @@ import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.exifinterface.media.ExifInterface
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.util.*
@@ -41,7 +43,7 @@ class GPSTrackingService : Service() {
 
 
     fun findNewPicture() {
-        GlobalScope.launch {
+        CoroutineScope(Dispatchers.IO).launch {
             val projection =
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     arrayOf(
@@ -213,9 +215,7 @@ class GPSTrackingService : Service() {
                         ExifInterface(stream).run {
                             // If lat/long is null, fall back to the coordinates (0, 0).
 
-                            if (it.isVideo == true) {
-                                println("video$latLong")
-                            }
+
                             if (latLong != null) {
 
                                 it.lat = latLong!![0]
@@ -269,7 +269,7 @@ class GPSTrackingService : Service() {
                         if (MyPreference.trackingState == 2) {
                             lastLocation = location
                             semaphore2.acquire()
-                            GlobalScope.launch {
+                            CoroutineScope(Dispatchers.IO).launch {
                                 semaphore2.acquire()
 
                                 val lat: Double = location.latitude
@@ -318,7 +318,7 @@ class GPSTrackingService : Service() {
                         if (MyPreference.trackingState == 2) {
                             lastLocation = location
                             semaphore2.acquire()
-                            GlobalScope.launch {
+                            CoroutineScope(Dispatchers.IO).launch {
                                 semaphore2.acquire()
 
                                 val lat: Double = location.latitude
@@ -383,10 +383,10 @@ class GPSTrackingService : Service() {
             }
             val locationProvider = LocationManager.GPS_PROVIDER
             val lastKnownLocation = locationManager!!.getLastKnownLocation(locationProvider)
-            GlobalScope.launch {
+            CoroutineScope(Dispatchers.IO).launch {
                 val data = db.getLasTime()
 
-                lastTime = data.time.time
+                lastTime = data.time!!.time
                 if (lastKnownLocation != null) {
                     val lng = lastKnownLocation.latitude
                     val lat = lastKnownLocation.longitude

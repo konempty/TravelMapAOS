@@ -19,7 +19,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.GPSTracker">
-        <activity android:name=".PhotoActivity"></activity>
+        <activity android:name=".PhotoActivity" />
         <activity android:name=".PhotoListActivity" />
         <activity android:name=".TrackingListActivity" />
         <activity android:name=".SplashActivity">
@@ -50,6 +50,7 @@
         </receiver>
 
         <service android:name=".GPSTrackingService" />
+        <service android:name=".PhotoService" />
     </application>
 
 </manifest>

@@ -20,6 +20,20 @@
             android:layout_height="match_parent"
             tools:context=".MapsActivity" />
 
+        <LinearLayout
+            android:id="@+id/cover"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#aa000000"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="사진을 분류중입니다.\n잠시만 기다려 주세요."
+                android:textColor="@color/white" />
+        </LinearLayout>
+
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/markerView"
             android:layout_width="wrap_content"
@@ -153,7 +167,7 @@
                     android:layout_marginTop="10dp">
 
                     <ImageView
-                        android:id="@+id/back_btn"
+                        android:id="@+id/backward_btn"
                         android:layout_width="0dp"
                         android:layout_height="50dp"
                         android:layout_weight="1"
@@ -173,6 +187,39 @@
                         android:layout_weight="1"
                         android:src="@drawable/ic_baseline_fast_forward_96" />
                 </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <Button
+                    android:id="@+id/speed1"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="1배속" />
+
+                <Button
+                    android:id="@+id/speed2"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="2배속" />
+
+                <Button
+                    android:id="@+id/speed5"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="5배속" />
+
+                <Button
+                    android:id="@+id/speed10"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="10배속" />
             </LinearLayout>
 
             <!--com.awesomedev.koreaholdem.BottomSheetListView

@@ -30,7 +30,7 @@ class ScreenSlidePageFragment : Fragment {
         }
         val v = inflater.inflate(R.layout.fragment_screen_slide_page, container, false)
         val item = PhotoListActivity.photoList[position]
-        img = v.findViewById<TouchImageView>(R.id.img)
+        img = v.findViewById(R.id.img)
         Glide.with(img)
             .load(item.uri)
             .into(img)
