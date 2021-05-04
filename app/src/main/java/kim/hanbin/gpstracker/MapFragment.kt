@@ -98,18 +98,23 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         initCluster()
 
         clusterManager.renderer =
-    CustomMapClusterRenderer(context!!, mMap!!, clusterManager, binding.markerView)
+            CustomMapClusterRenderer(context!!, mMap!!, clusterManager, binding.markerView)
 
 
     }
 
+    var initing = false
 
     fun initCluster() {
+        if (initing)
+            return
+        initing = true
         if (PhotoService.loadComplete)
             MainScope().launch {
                 binding.cover.visibility = View.GONE
+                clusterManager.clearItems()
+                mMap!!.clear()
             }
-        clusterManager.clearItems()
         var i = 0
         CoroutineScope(Dispatchers.IO).launch {
             if (PhotoService.galleryPlace.isNotEmpty())
@@ -171,6 +176,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
             MainScope().launch {
 
                 clusterManager.cluster()
+                initing = false
             }
         }
 

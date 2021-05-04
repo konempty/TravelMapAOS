@@ -17,7 +17,6 @@ import androidx.core.app.NotificationCompat
 import androidx.exifinterface.media.ExifInterface
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.util.*
 import java.util.concurrent.Semaphore
@@ -67,7 +66,7 @@ class GPSTrackingService : Service() {
             var isNotProcess = true
 // Show only videos that are at least 5 minutes in duration.
 // Display videos in alphabetical order based on their display name.
-            val sortOrder = "${MediaStore.Images.Media.DATE_TAKEN} Desc"
+            val sortOrder = "${MediaStore.Images.Media.DATE_TAKEN} ASC"
 
             val select =
                 "${MediaStore.Images.Media.DATE_TAKEN} > $lastTime and (${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE} or ${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO})"
@@ -270,7 +269,6 @@ class GPSTrackingService : Service() {
                             lastLocation = location
                             semaphore2.acquire()
                             CoroutineScope(Dispatchers.IO).launch {
-                                semaphore2.acquire()
 
                                 val lat: Double = location.latitude
                                 val lng: Double = location.longitude
@@ -319,7 +317,6 @@ class GPSTrackingService : Service() {
                             lastLocation = location
                             semaphore2.acquire()
                             CoroutineScope(Dispatchers.IO).launch {
-                                semaphore2.acquire()
 
                                 val lat: Double = location.latitude
                                 val lng: Double = location.longitude

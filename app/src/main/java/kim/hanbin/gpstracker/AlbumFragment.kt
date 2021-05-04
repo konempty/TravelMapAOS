@@ -8,8 +8,6 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import kim.hanbin.gpstracker.databinding.FragmentAlbumBinding
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
 
 class AlbumFragment : Fragment() {
     companion object {
@@ -46,7 +44,7 @@ class AlbumFragment : Fragment() {
 
     fun refresh() {
 
-            binding.recyclerView.adapter?.notifyDataSetChanged()
+        binding.recyclerView.adapter?.notifyDataSetChanged()
 
     }
 

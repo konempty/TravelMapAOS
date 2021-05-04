@@ -10,6 +10,8 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Size
 import android.view.View
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import androidx.annotation.NonNull
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -26,6 +28,7 @@ import com.google.maps.android.ktx.utils.sphericalDistance
 import kim.hanbin.gpstracker.databinding.ActivityMapsBinding
 import kotlinx.coroutines.*
 import java.io.FileNotFoundException
+import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.acos
 import kotlin.math.cos
@@ -40,7 +43,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var mMap: GoogleMap
     private lateinit var clusterManager: ClusterManager<MyItem>
     var trackingNum: Int = 0
-    val db: EventDao by lazy{InnerDB.getInstance(this@MapsActivity)}
+    val db: EventDao by lazy { InnerDB.getInstance(this@MapsActivity) }
     var zoomlevel = 0
     var angle = 0f
     var nextIdx = 0
@@ -58,6 +61,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     companion object {
 
         val clusterList = mutableListOf<BaseData>()
+        lateinit var instance: MapsActivity
     }
 
 
@@ -71,7 +75,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
-
+        instance = this
 
         trackingNum = intent.getIntExtra("trackingNum", 0)
         bottomSheetBehavior = BottomSheetBehavior.from(binding.bottomNavigationContainer)
@@ -137,95 +141,119 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
         binding.fowardBtn.setOnClickListener {
-            mMap.stopAnimation()
-            if (nextIdx != trackingLogs.size) {
-                val item = trackingLogs[nextIdx - 1]
-
-
-                val cameraPosition = CameraUpdateFactory.newCameraPosition(
-                    if (isAuto) {
-
-                        angle = bearing(
-                            lastLoc.latitude,
-                            lastLoc.longitude,
-                            item.latLng!!.latitude,
-                            item.latLng!!.longitude
-                        )
-
-                        CameraPosition.Builder().bearing(angle).zoom(zoomLevels[zoomlevel])
-                            .tilt(90F)
-
-                    } else {
-                        CameraPosition.Builder()
-                    }.target(item.latLng).build()
-                )
-                mMap.moveCamera(cameraPosition)
-                lastLoc = item.latLng!!
-                centerMarker!!.position = lastLoc
-                isAccuratePoint = true
-
-
-
-                nextTracking()
-            }
+            goFoward()
         }
         binding.backwardBtn.setOnClickListener {
-            mMap.stopAnimation()
-            isStop = false
-            val back = if (isAccuratePoint) {
-                2
-            } else {
-                1
-            } //얼마만큼 이전으로 돌아가서 찾아야 하는지
-            var item = trackingLogs[nextIdx - back]
-            for (idx in nextIdx - back downTo 0) {
-                val item2 = trackingLogs[idx]
-                if (item2.eventNum == 3) {
-                    item = item2
-                    break;
-                }
-                nextIdx--
+            goPrev()
+        }
+
+        binding.speed1.setOnClickListener {
+            changeSpeed(0)
+        }
+        binding.speed2.setOnClickListener {
+            changeSpeed(1)
+        }
+        binding.speed5.setOnClickListener {
+            changeSpeed(2)
+        }
+        binding.speed10.setOnClickListener {
+            changeSpeed(3)
+        }
+        changeColor(0)
+    }
+
+    fun goFoward() {
+        mMap.stopAnimation()
+        if (nextIdx <= trackingLogs.size) {
+            val item = trackingLogs[nextIdx - 1]
+
+
+            val cameraPosition = CameraUpdateFactory.newCameraPosition(
+                if (isAuto) {
+
+                    angle = bearing(
+                        lastLoc.latitude,
+                        lastLoc.longitude,
+                        item.latLng!!.latitude,
+                        item.latLng!!.longitude
+                    )
+
+                    CameraPosition.Builder().bearing(angle).zoom(zoomLevels[zoomlevel])
+                        .tilt(90F)
+
+                } else {
+                    CameraPosition.Builder()
+                }.target(item.latLng).build()
+            )
+            mMap.moveCamera(cameraPosition)
+            lastLoc = item.latLng!!
+            centerMarker!!.position = lastLoc
+            isAccuratePoint = true
+
+
+
+            nextTracking()
+        }
+    }
+
+    fun goPrev() {
+        mMap.stopAnimation()
+        isStop = false
+        val back = if (isAccuratePoint) {
+            2
+        } else {
+            1
+        } //얼마만큼 이전으로 돌아가서 찾아야 하는지
+        var item = trackingLogs[nextIdx - back]
+        for (idx in nextIdx - back downTo 0) {
+            val item2 = trackingLogs[idx]
+            if (item2.eventNum == 3) {
+                item = item2
+                break;
             }
-            val isFound = arrayListOf(false, false, false) //0: 이전 GPS찾음 1:이전과 그 전의 GPS찾음 2: 줌레벨 찾음
-            var prevItem: EventData = item
-            var isDiscrete = false
-            for (idx in nextIdx - back - 1 downTo 0) {
-                val item2 = trackingLogs[idx]
-                if (item2.eventNum == 3) {
-                    if (isFound[0]) {
-                        if (!isFound[1]) {
-                            isFound[1] = true
-                            if (!isDiscrete)
-                                angle = bearing(
-                                    item2.lat!!,
-                                    item2.lng!!,
-                                    prevItem.lat!!,
-                                    prevItem.lng!!
-                                )
-                            if (isFound[2]) {
-                                break;
-                            }
+            nextIdx--
+        }
+        val isFound = arrayListOf(false, false, false) //0: 이전 GPS찾음 1:이전과 그 전의 GPS찾음 2: 줌레벨 찾음
+        var prevItem: EventData = item
+        var isDiscrete = false
+        for (idx in nextIdx - back - 1 downTo 0) {
+            val item2 = trackingLogs[idx]
+            if (item2.eventNum == 3) {
+                if (isFound[0]) {
+                    if (!isFound[1]) {
+                        isFound[1] = true
+                        if (!isDiscrete)
+                            angle = bearing(
+                                item2.lat!!,
+                                item2.lng!!,
+                                prevItem.lat!!,
+                                prevItem.lng!!
+                            )
+                        if (isFound[2]) {
+                            break;
                         }
-                    } else {
-                        nextIdx = idx + 1
-                        prevItem = item2
-                        isFound[0] = true
-                    }
-                } else if (item2.eventNum == 4) {
-                    if (isFound[0] && !isFound[2]) {
-                        isFound[2] = true
-                        zoomlevel = item2.trackingSpeed!!
-                        if (isFound[1])
-                            break
                     }
                 } else {
-                    if (idx == 0 && isPause) {
-
-                        isStop = true
-                    }
-                    isDiscrete = true
+                    nextIdx = idx + 1
+                    prevItem = item2
+                    isFound[0] = true
                 }
+            } else if (item2.eventNum == 4) {
+                if (isFound[0] && !isFound[2]) {
+                    isFound[2] = true
+                    zoomlevel = item2.trackingSpeed!!
+                    if (isFound[1])
+                        break
+                }
+            } else {
+                if (idx == 0 && isPause) {
+
+                    isStop = true
+                }
+                isDiscrete = true
             }
+        }
+        if (prevItem.eventNum == 3) {
             val cameraPosition = CameraUpdateFactory.newCameraPosition(
                 if (isAuto) {
 
@@ -240,22 +268,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             mMap.moveCamera(cameraPosition)
             lastLoc = prevItem.latLng!!
             centerMarker!!.position = lastLoc
-            isAccuratePoint = true
-            nextTracking()
         }
-        binding.speed1.setOnClickListener {
-            changeSpeed(0)
-        }
-        binding.speed2.setOnClickListener {
-            changeSpeed(1)
-        }
-        binding.speed5.setOnClickListener {
-            changeSpeed(2)
-        }
-        binding.speed10.setOnClickListener {
-            changeSpeed(3)
-        }
-        changeColor(0)
+        isAccuratePoint = true
+        nextTracking()
     }
 
     fun getStartPoint() {
@@ -376,9 +391,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     fun initCluster() {
 
         clusterManager.clearItems()
+        mMap.clear()
         var polylineOptions = PolylineOptions()
 
         CoroutineScope(Dispatchers.IO).launch {
+            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+            val list = arrayListOf<String>()
+            val dataList = arrayListOf<EventData>()
             eventList = db.getTrackingLog(trackingNum)
 
 
@@ -393,6 +412,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     }
                     3 -> {
                         polylineOptions.add(item.latLng)
+                        list.add(sdf.format(item.time!!))
+                        dataList.add(item)
                         trackingLogs.add(item)
                     }
                     4 -> trackingLogs.add(item)
@@ -433,6 +454,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
             launch(Dispatchers.Main) {
 
+                binding.trackingLogList.adapter = ArrayAdapter(
+                    this@MapsActivity,
+                    android.R.layout.simple_list_item_1,
+                    list
+                )
+                binding.trackingLogList.setOnItemClickListener { _: AdapterView<*>, _: View, i: Int, _: Long ->
+                    val item1 = dataList[i]
+                    val idx = trackingLogs.indexOf(item1)
+
+                    nextIdx = idx+1
+                    goFoward()
+
+
+                }
                 mMap.addPolyline(polylineOptions)
                 polylineOptions = PolylineOptions()
                 clusterManager.cluster()
@@ -466,15 +501,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 if (!isPause) {
 
                     MainScope().launch {
-                        val animateTime =
-
-                            if (isDiscrete) {
-                                isDiscrete = false
-                                1
-
-                            } else {
-                                3000 / speed
-                            }
                         delay(100)
                         val cameraPosition = CameraUpdateFactory.newCameraPosition(
                             if (isAuto) {
@@ -503,6 +529,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                                 CameraPosition.Builder().target(item.latLng)
                             }.build()
                         )
+                        val animateTime =
+
+                            if (isDiscrete) {
+                                isDiscrete = false
+                                1
+
+                            } else {
+                                3000 / speed
+                            }
                         mMap.animateCamera(
                             cameraPosition,
 

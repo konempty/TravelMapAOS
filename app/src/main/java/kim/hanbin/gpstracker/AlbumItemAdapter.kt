@@ -14,7 +14,6 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import kotlinx.coroutines.*
 import java.io.FileNotFoundException
 
@@ -78,10 +77,6 @@ class AlbumItemAdapter(
                         }
                     try {
 
-                        Glide.with(holder.img)
-                            .load(it.uri)
-                            .thumbnail(0.3f)
-                            .into(holder.img)
                         if (it.bitmap == null) {
                             it.bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                                 context.contentResolver.loadThumbnail(
@@ -94,6 +89,7 @@ class AlbumItemAdapter(
                                 )
                             }
                         }
+                        holder.img.setImageBitmap(it.bitmap)
                     } catch (e: FileNotFoundException) {
 
                         CoroutineScope(Dispatchers.IO).launch {

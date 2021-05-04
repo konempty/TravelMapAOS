@@ -16,6 +16,9 @@ interface EventDao {
     @Query("DELETE from eventdata where id = :id")
     fun delete(id: Long)
 
+    @Query("DELETE from eventdata where pictureId = :id")
+    fun deletePicture(id: Long)
+
 
     @Query("DELETE from eventdata where trackingNum = :trackingNum")
     fun deleteLogs(trackingNum: Int)

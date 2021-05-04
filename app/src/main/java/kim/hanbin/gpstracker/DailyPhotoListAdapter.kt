@@ -2,19 +2,31 @@ package kim.hanbin.gpstracker
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
+import android.provider.MediaStore
+import android.util.Size
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
+import android.widget.ImageView
 import android.widget.TextView
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.ViewCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import java.io.FileNotFoundException
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.ArrayList
 
 
-class DailyPhotoListAdapter(val map: Map<String, List<BaseData>>) : BaseAdapter() {
+class DailyPhotoListAdapter(map: Map<Date, List<BaseData>>) : BaseAdapter() {
     private val listViewItemList: ArrayList<List<BaseData>> = ArrayList()
-    var keys: List<String> = ArrayList()
-
+    var keys: List<Date> = ArrayList()
+    val sdf = SimpleDateFormat("yyyy년MM월dd일", Locale.KOREAN)
 
     override fun getCount(): Int {
         return keys.size
@@ -30,24 +42,181 @@ class DailyPhotoListAdapter(val map: Map<String, List<BaseData>>) : BaseAdapter(
             val inflater =
                 context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
             convertView = inflater.inflate(R.layout.daily_photo_list_item, parent, false)
+            val queue: Queue<ImageView> = LinkedList()
+            convertView.tag = queue
         }
 
         // 화면에 표시될 View(Layout이 inflate된)으로부터 위젯에 대한 참조 획득
-        val datetv = convertView!!.findViewById<TextView>(R.id.date)
-        val recyclerView = convertView.findViewById<RecyclerView>(R.id.recyclerView)
-        recyclerView.layoutManager = GridLayoutManager(context, 3)
+        val queue = convertView!!.tag as Queue<ImageView>
+        val queue2: Queue<ImageView> = LinkedList()
+        val datetv = convertView.findViewById<TextView>(R.id.date)
+        val constraintLayout = convertView.findViewById<ConstraintLayout>(R.id.constraintLayout)
+        constraintLayout.removeAllViews()
+        /* for (view in array) {
+             view.visibility = View.GONE
+         }*/
+        val listViewItem =
+            listViewItemList[position].sortedByDescending { (it as PhotoData).addedTime }
+        datetv.text = sdf.format(keys[position])
 
-        val listViewItem = listViewItemList[position].sortedByDescending { (it as PhotoData).addedTime }
-        recyclerView.isNestedScrollingEnabled = false
-        datetv.text = keys[position]
-        recyclerView.adapter = PhotoListItemAdapter(listViewItem, context, false) {
+        var count = 0
+        var prevView: View = constraintLayout
+        for (item in listViewItem) {
+            var imageView = queue.poll()
+            if (imageView == null) {
+                imageView = ImageView(context)
+                imageView.id = ViewCompat.generateViewId()
+            } else {
+                val job = imageView.tag as Job
+                if (job.isActive) {
+                    job.cancel()
+                }
+            }
+            imageView.setOnClickListener {
+
+                PhotoListActivity.photoList =
+                    PhotoService.imageList.sortedByDescending { (it as PhotoData).addedTime }
+                        .toMutableList()
+                context.startActivity(
+                    Intent(context, PhotoActivity::class.java).putExtra("id", (item as PhotoData).id)
+                        .putExtra("isFromTracking", false))
+            }
+            imageView.visibility = View.VISIBLE
+            imageView.setImageDrawable(null)
+            /*
+            app:layout_constraintDimensionRatio="H3,1"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintWidth_percent="0.3"*/
+            val layoutParams = ConstraintLayout.LayoutParams(0, 0)
+            imageView.layoutParams = layoutParams
+            imageView.scaleType = ImageView.ScaleType.CENTER_CROP
+            layoutParams.dimensionRatio = "H,1:1"
+            layoutParams.matchConstraintPercentWidth = 0.32F
+            if (count == 0) {
+                layoutParams.topToTop = prevView.id
+                layoutParams.leftToLeft = prevView.id
+            } else {
+                val prevParam = prevView.layoutParams as ConstraintLayout.LayoutParams
+                when (count % 3) {
+                    0 -> {
+                        layoutParams.topMargin = 10
+                        layoutParams.topToBottom = prevView.id
+                        layoutParams.leftToLeft = constraintLayout.id
+                    }
+                    1 -> {
+                        layoutParams.topToTop = prevView.id
+                        layoutParams.leftToRight = prevView.id
+                        prevParam.rightToLeft = imageView.id
+
+                    }
+                    2 -> {
+
+                        layoutParams.topToTop = prevView.id
+                        layoutParams.leftToRight = prevView.id
+                        layoutParams.rightToRight = constraintLayout.id
+                        prevParam.rightToLeft = imageView.id
+
+                    }
+
+
+                }
+            }
+            prevView = imageView
+            constraintLayout.addView(imageView, count)
+            queue2.add(imageView)
+
+            imageView.tag = CoroutineScope(Dispatchers.IO).launch {
+                try {
+
+                    if (item.bitmap == null)
+                        item.bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            context.contentResolver.loadThumbnail(
+                                item.uri, Size(640, 640), null
+                            )
+                        } else {
+                            MediaStore.Images.Thumbnails.getThumbnail(
+                                context.contentResolver, item.uri.lastPathSegment!!.toLong(),
+                                MediaStore.Images.Thumbnails.MINI_KIND, null
+                            )
+                        }
+                    launch(Dispatchers.Main) { imageView.setImageBitmap(item.bitmap) }
+
+
+                } catch (e: FileNotFoundException) {
+
+                    if (item is EventData) {
+
+                        val db = InnerDB.getInstance(context)
+                        db.delete(item.id!!)
+                    } else if (item is PhotoData) {
+                        val db = InnerDB.getPhotoInstance(context)
+                        db.delete(item.id!!)
+                    }
+
+
+                } catch (e: Exception) {
+                }
+            }
+
+            count++
+        }
+        val tri = (count / 3) * 3 + if (count % 3 == 0) 0 else 3
+        for (i in count until tri) {
+            var imageView = queue.poll()
+            if (imageView == null) {
+                imageView = ImageView(context)
+                imageView.id = ViewCompat.generateViewId()
+            }
+            val layoutParams = ConstraintLayout.LayoutParams(0, 0)
+            imageView.layoutParams = layoutParams
+            imageView.scaleType = ImageView.ScaleType.CENTER_CROP
+            layoutParams.dimensionRatio = "H,1:1"
+            layoutParams.matchConstraintPercentWidth = 0.32F
+            if (count == 0) {
+                layoutParams.topToTop = prevView.id
+                layoutParams.leftToLeft = prevView.id
+            } else {
+                val prevParam = prevView.layoutParams as ConstraintLayout.LayoutParams
+                when (count % 3) {
+                    0 -> {
+                        layoutParams.topToBottom = prevView.id
+                        layoutParams.leftToLeft = constraintLayout.id
+                    }
+                    1 -> {
+                        layoutParams.topToTop = prevView.id
+                        layoutParams.leftToRight = prevView.id
+                        prevParam.rightToLeft = imageView.id
+
+                    }
+                    2 -> {
+
+                        layoutParams.topToTop = prevView.id
+                        layoutParams.leftToRight = prevView.id
+                        layoutParams.rightToRight = constraintLayout.id
+                        prevParam.rightToLeft = imageView.id
+
+                    }
+
+
+                }
+            }
+            prevView = imageView
+            constraintLayout.addView(imageView, count)
+            queue2.add(imageView)
+            count++
+        }
+        constraintLayout.tag = queue2
+        /*recyclerView.adapter = PhotoListItemAdapter(listViewItem, context, false) {
             val item = it.item
             PhotoListActivity.photoList =
                 PhotoService.imageList.sortedByDescending { (it as PhotoData).addedTime }
+                    .toMutableList()
             context.startActivity(
                 Intent(context, PhotoActivity::class.java).putExtra("id", (item as PhotoData).id)
+                    .putExtra("isFromTracking", false)
             )
-        }
+        }*/
 
         return convertView
     }

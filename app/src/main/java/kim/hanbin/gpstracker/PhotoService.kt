@@ -15,8 +15,8 @@ class PhotoService : Service() {
     companion object {
 
         val imageListMap = mutableMapOf<String, MutableList<BaseData>>()
-        val imageListDailyMap = mutableMapOf<String, MutableList<BaseData>>()
-        val imageList= arrayListOf<BaseData>()
+        val imageListDailyMap = mutableMapOf<Date, MutableList<BaseData>>()
+        val imageList = arrayListOf<BaseData>()
         var galleryPlace: List<PhotoData> = arrayListOf()
 
         fun refresh() {
@@ -38,7 +38,7 @@ class PhotoService : Service() {
     var tmpList = arrayListOf<PhotoData>()
     var thread: Thread = Thread {
         try {
-            Thread.sleep(1000)
+            Thread.sleep(100)
             val sem = Semaphore(10)
 
             while (tmpList.isNotEmpty()) {
@@ -67,7 +67,7 @@ class PhotoService : Service() {
             db.singleTransaction(photoList)
 
             loadComplete()
-        }catch (e:Exception){
+        } catch (e: Exception) {
             e.printStackTrace()
         }
     }
@@ -136,7 +136,7 @@ class PhotoService : Service() {
         imageList.clear()
         for (photo in list) {
             val parent = photo.path
-            val date = sdf.format(photo.addedTime!!*1000)
+            val date = sdf.parse(sdf.format(photo.addedTime!! * 1000))!!
             if (!imageListMap.containsKey(parent)) {
                 imageListMap[parent!!] = mutableListOf()
             }
@@ -146,7 +146,7 @@ class PhotoService : Service() {
 
             imageListMap[parent]!! += photo
             imageListDailyMap[date]!! += photo
-            imageList+=photo
+            imageList += photo
 
         }
         query?.use { cursor ->
@@ -177,6 +177,7 @@ class PhotoService : Service() {
             val mediaColumn = cursor.getColumnIndexOrThrow(
                 MediaStore.Files.FileColumns.MEDIA_TYPE
             )
+            thread.start()
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
                 val name = cursor.getString(nameColumn)
@@ -197,7 +198,7 @@ class PhotoService : Service() {
                 // Stores column values and the contentUri in a local object
                 // that represents the media file.
 
-                val date = sdf.format(added*1000)
+                val date = sdf.parse(sdf.format(added * 1000))!!
 
                 if (!imageListMap.containsKey(parent) || imageListMap[parent] == null) {
                     imageListMap[parent] = mutableListOf()
@@ -244,7 +245,7 @@ class PhotoService : Service() {
 
                         imageListMap[parent]!! += photodata
                         imageListDailyMap[date]!! += photodata
-                        imageList+=photodata
+                        imageList += photodata
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
@@ -255,10 +256,7 @@ class PhotoService : Service() {
                     tmpList.add(photodata)
                     imageListMap[parent]!! += photodata
                     imageListDailyMap[date]!! += photodata
-                    imageList+=photodata
-                    if (!thread.isAlive) {
-                        thread.start()
-                    }
+                    imageList += photodata
 
                 }
 

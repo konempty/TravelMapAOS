@@ -8,7 +8,7 @@ import kim.hanbin.gpstracker.databinding.ActivityPhotoListBinding
 
 class PhotoListActivity : AppCompatActivity() {
     companion object {
-        lateinit var photoList: List<BaseData>
+        lateinit var photoList: MutableList<BaseData>
     }
 
     private var mBinding: ActivityPhotoListBinding? = null
@@ -22,12 +22,12 @@ class PhotoListActivity : AppCompatActivity() {
         binding.recyclerView.layoutManager = GridLayoutManager(this, 3)
         if (name == null) {
             photoList = MapsActivity.clusterList
-        } else if(name=="\\"){
+        } else if (name == "\\") {
             photoList = MapFragment.clusterList
-        }else {
+        } else {
             photoList = PhotoService.imageListMap[name]!!
         }
-        binding.recyclerView.adapter = PhotoListItemAdapter(photoList, this,true) {
+        binding.recyclerView.adapter = PhotoListItemAdapter(photoList, this, true) {
             val item = it.item
             val id = if (item is EventData) {
                 item.pictureId
@@ -38,6 +38,7 @@ class PhotoListActivity : AppCompatActivity() {
             }
             startActivity(
                 Intent(this, PhotoActivity::class.java).putExtra("id", id)
+                    .putExtra("isFromTracking", name == null)
             )
         }
         //val splts = name!!.split("/")

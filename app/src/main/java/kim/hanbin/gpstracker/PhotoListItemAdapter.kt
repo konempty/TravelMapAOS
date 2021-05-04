@@ -10,17 +10,15 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.io.FileNotFoundException
 
 class PhotoListItemAdapter(
     val list: List<BaseData>,
     val context: Context,
-    val isActivity:Boolean,
+    val isActivity: Boolean,
     val listener: (ViewHolder) -> Unit
 ) :
     RecyclerView.Adapter<PhotoListItemAdapter.ViewHolder>() {
@@ -59,9 +57,6 @@ class PhotoListItemAdapter(
         }
         try {
 
-            Glide.with(holder.img)
-                .load(it.uri)
-                .into(holder.img)
             if (it.bitmap == null)
                 it.bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     context.contentResolver.loadThumbnail(
@@ -73,6 +68,7 @@ class PhotoListItemAdapter(
                         MediaStore.Images.Thumbnails.MINI_KIND, null
                     )
                 }
+            holder.img.setImageBitmap(it.bitmap)
         } catch (e: FileNotFoundException) {
 
             CoroutineScope(Dispatchers.IO).launch {
@@ -91,7 +87,7 @@ class PhotoListItemAdapter(
     }
 
     override fun getItemCount(): Int {
-        if (list.isEmpty() &&isActivity)
+        if (list.isEmpty() && isActivity)
             (context as Activity).finish()
         return list.size
     }

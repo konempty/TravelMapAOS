@@ -222,6 +222,11 @@
                     android:text="10배속" />
             </LinearLayout>
 
+            <ListView
+                android:id="@+id/trackingLogList"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
             <!--com.awesomedev.koreaholdem.BottomSheetListView
                 android:id="@+id/advertiseList"
                 android:layout_width="match_parent"

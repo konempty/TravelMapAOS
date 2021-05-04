@@ -27,7 +27,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         mBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        startService(Intent(this, PhotoService::class.java))
         val pagerAdapter = ScreenSlidePagerAdapter(this)
         binding.pager.adapter = pagerAdapter
         changeFragment(1)
@@ -41,6 +40,10 @@ class MainActivity : AppCompatActivity() {
         binding.pager.animation = null
     }
 
+    override fun onResume() {
+        super.onResume()
+        startService(Intent(this, PhotoService::class.java))
+    }
 
     private inner class ScreenSlidePagerAdapter(fa: FragmentActivity) : FragmentStateAdapter(fa) {
 
@@ -59,7 +62,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        stopService(Intent(this,PhotoService::class.java))
+        stopService(Intent(this, PhotoService::class.java))
     }
 
     fun changeFragment(idx: Int) {
