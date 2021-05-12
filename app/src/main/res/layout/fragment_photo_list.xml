@@ -3,18 +3,20 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/dark"
     android:orientation="vertical"
-    tools:context=".PhotoListFragment">
+    android:paddingLeft="5dp"
+    android:paddingRight="5dp"
+    android:descendantFocusability="blocksDescendants"
+  tools:context=".PhotoListFragment">
 
     <ListView
         android:id="@+id/list"
+        android:clickable="true"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="123" />
+        android:layout_height="wrap_content"
+        android:divider="@null"
+        android:focusable="true" />
 
 
 </LinearLayout>

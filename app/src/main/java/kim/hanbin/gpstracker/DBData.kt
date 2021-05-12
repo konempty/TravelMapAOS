@@ -34,7 +34,6 @@ abstract class BaseData {
 @Entity
 data class PhotoData(
     @PrimaryKey val id: Long?,
-    val addedTime: Long?,
     val modifyTime: Long?,
     var isLoc: Boolean?
 ) : BaseData() {
@@ -44,12 +43,11 @@ data class PhotoData(
         name: String?,
         path: String?,
         isVideo: Boolean?,
-        addedTime: Long?,
         modifyTime: Long?,
         isLoc: Boolean?,
         lat: Double?,
         lng: Double?
-    ) : this(id, addedTime, modifyTime, isLoc) {
+    ) : this(id, modifyTime, isLoc) {
         super.name = name
         super.path = path
         super.isVideo = isVideo

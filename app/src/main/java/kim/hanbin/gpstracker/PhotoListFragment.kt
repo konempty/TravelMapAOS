@@ -4,14 +4,19 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AbsListView
 import androidx.fragment.app.Fragment
 import kim.hanbin.gpstracker.databinding.FragmentPhotoListBinding
+
 
 class PhotoListFragment : Fragment() {
 
 
     private var mBinding: FragmentPhotoListBinding? = null
     private val binding get() = mBinding!!
+    val listView by lazy { binding.list }
+    lateinit var adapter:DailyPhotoListAdapter
+    var position = 0
 
     companion object {
         var instance: PhotoListFragment? = null
@@ -24,8 +29,21 @@ class PhotoListFragment : Fragment() {
         // Inflate the layout for this fragment
         instance = this
         mBinding = FragmentPhotoListBinding.inflate(inflater, container, false)
-        binding.list.adapter = DailyPhotoListAdapter(PhotoService.imageListDailyMap)
+        adapter =  DailyPhotoListAdapter(listView,PhotoService.imageListDailyMap)
+        listView.adapter =adapter
+        listView.setOnScrollListener(object : AbsListView.OnScrollListener {
+            override fun onScrollStateChanged(view: AbsListView?, scrollState: Int) {
+                // TODO Auto-generated method stub
+            }
 
+            override fun onScroll(
+                view: AbsListView?, firstVisibleItem: Int,
+                visibleItemCount: Int, totalItemCount: Int
+            ) {
+                position = firstVisibleItem
+
+            }
+        })
         return binding.root
     }
 
@@ -35,7 +53,10 @@ class PhotoListFragment : Fragment() {
     }
 
     fun refresh() {
-        binding.list.adapter = DailyPhotoListAdapter(PhotoService.imageListDailyMap)
+        adapter = DailyPhotoListAdapter(listView,PhotoService.imageListDailyMap)
+        listView.adapter =adapter
+        listView.setSelection(position)
+
     }
 
 

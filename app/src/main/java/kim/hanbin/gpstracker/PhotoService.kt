@@ -18,6 +18,7 @@ class PhotoService : Service() {
         val imageListDailyMap = mutableMapOf<Date, MutableList<BaseData>>()
         val imageList = arrayListOf<BaseData>()
         var galleryPlace: List<PhotoData> = arrayListOf()
+        var isRunning = false
 
         fun refresh() {
             MainScope().launch {
@@ -36,7 +37,7 @@ class PhotoService : Service() {
 
     var photoList = arrayListOf<PhotoData>()
     var tmpList = arrayListOf<PhotoData>()
-    var thread: Thread = Thread {
+    val thread: Thread = Thread {
         try {
             Thread.sleep(100)
             val sem = Semaphore(10)
@@ -73,6 +74,7 @@ class PhotoService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        isRunning = true
         CoroutineScope(Dispatchers.IO).launch {
             delay(100)
             init()
@@ -84,7 +86,7 @@ class PhotoService : Service() {
     }
 
     val db: PhotoDataDao by lazy { InnerDB.getPhotoInstance(this) }
-    val sdf = SimpleDateFormat("yyyy년MM월dd일", Locale.KOREAN)
+    val sdf = SimpleDateFormat("yyyy년 MM월 dd일", Locale.KOREAN)
 
     fun init() {
         loadComplete = false
@@ -95,7 +97,6 @@ class PhotoService : Service() {
                     MediaStore.Files.FileColumns.MEDIA_TYPE,
                     MediaStore.Images.Media.DISPLAY_NAME,
                     MediaStore.Images.Media.DATE_MODIFIED,
-                    MediaStore.Images.Media.DATE_ADDED,
                     MediaStore.MediaColumns.RELATIVE_PATH
                 )
             } else {
@@ -106,14 +107,13 @@ class PhotoService : Service() {
                     MediaStore.Images.Media.LATITUDE,
                     MediaStore.Images.Media.LONGITUDE,
                     MediaStore.Images.Media.DATE_MODIFIED,
-                    MediaStore.Images.Media.DATE_ADDED,
                     MediaStore.Images.Media.DATA
                 )
             }
 
 // Show only videos that are at least 5 minutes in duration.
 // Display videos in alphabetical order based on their display name.
-        val sortOrder = "${MediaStore.Images.Media.DATE_ADDED} ASC"
+        val sortOrder = "${MediaStore.Images.Media.DATE_MODIFIED} ASC"
         val max = db.getMax()
         var maxid = max.id
         if (maxid == null)
@@ -136,7 +136,7 @@ class PhotoService : Service() {
         imageList.clear()
         for (photo in list) {
             val parent = photo.path
-            val date = sdf.parse(sdf.format(photo.addedTime!! * 1000))!!
+            val date = sdf.parse(sdf.format(photo.modifyTime!!*1000))!!
             if (!imageListMap.containsKey(parent)) {
                 imageListMap[parent!!] = mutableListOf()
             }
@@ -165,9 +165,6 @@ class PhotoService : Service() {
             val modifyColumn = cursor.getColumnIndexOrThrow(
                 MediaStore.Images.Media.DATE_MODIFIED
             )
-            val addedColumn = cursor.getColumnIndexOrThrow(
-                MediaStore.Images.Media.DATE_ADDED
-            )
             val pathColumn =
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) cursor.getColumnIndexOrThrow(
                     MediaStore.MediaColumns.RELATIVE_PATH
@@ -182,7 +179,6 @@ class PhotoService : Service() {
                 val id = cursor.getLong(idColumn)
                 val name = cursor.getString(nameColumn)
                 val modify = cursor.getLong(modifyColumn)
-                val added = cursor.getLong(addedColumn)
                 // Get values of columns for a given video.
 
                 var latLong: DoubleArray? = null
@@ -198,7 +194,7 @@ class PhotoService : Service() {
                 // Stores column values and the contentUri in a local object
                 // that represents the media file.
 
-                val date = sdf.parse(sdf.format(added * 1000))!!
+                val date = sdf.parse(sdf.format(modify*1000))!!
 
                 if (!imageListMap.containsKey(parent) || imageListMap[parent] == null) {
                     imageListMap[parent] = mutableListOf()
@@ -219,7 +215,6 @@ class PhotoService : Service() {
                             name,
                             parent,
                             media,
-                            added,
                             modify,
                             true,
                             latLong[0],
@@ -232,7 +227,6 @@ class PhotoService : Service() {
                             name,
                             parent,
                             media,
-                            added,
                             modify,
                             false,
                             0.0,
@@ -251,7 +245,7 @@ class PhotoService : Service() {
                     }
                 } else {
                     val photodata =
-                        PhotoData(id, name, parent, media, added, modify, false, 0.0, 0.0)
+                        PhotoData(id, name, parent, media, modify, false, 0.0, 0.0)
 
                     tmpList.add(photodata)
                     imageListMap[parent]!! += photodata
@@ -283,6 +277,7 @@ class PhotoService : Service() {
         super.onDestroy()
         if (thread.isAlive)
             thread.interrupt()
+        isRunning = false
     }
 
     fun loadComplete() {
@@ -290,6 +285,7 @@ class PhotoService : Service() {
         galleryPlace = db.getGaleryPlace()
         MapFragment.instance?.refresh()
         stopSelf()
+        isRunning = false
     }
 
 }

@@ -65,7 +65,7 @@ class AlbumItemAdapter(
                         map.remove(entry.key)
                         return
                     }
-                    entry.value.sortedByDescending { (it as PhotoData).addedTime }
+                    entry.value.sortedByDescending { (it as PhotoData).modifyTime }
                     val it = entry.value.first()
 
 

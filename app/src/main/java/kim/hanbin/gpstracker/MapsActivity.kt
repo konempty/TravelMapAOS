@@ -14,6 +14,7 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.annotation.NonNull
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -196,6 +197,246 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    /**
+     * Manipulates the map once available.
+     * This callback is triggered when the map is ready to be used.
+     * This is where we can add markers or lines, add listeners or move the camera. In this case,
+     * we just add a marker near Sydney, Australia.
+     * If Google Play services is not installed on the device, the user will be prompted to install
+     * it inside the SupportMapFragment. This method will only be triggered once the user has
+     * installed Google Play services and returned to the app.
+     */
+    override fun onMapReady(googleMap: GoogleMap) {
+        mMap = googleMap
+
+
+        clusterManager = ClusterManager(this, mMap)
+        mMap.setOnCameraIdleListener(clusterManager)
+        mMap.setOnMarkerClickListener(clusterManager)
+
+        clusterManager.setOnClusterClickListener {
+            clusterList.clear()
+            for (it in it.items.sortedWith(compareBy<MyItem> { it.item.time })) {
+                clusterList.add(it.item)
+            }
+            clusterList.sortByDescending { (it as EventData).time }
+            startActivity(
+                Intent(
+                    this,
+                    PhotoListActivity::class.java
+                )
+            )
+            true
+        }
+        clusterManager.setOnClusterItemClickListener {
+            clusterList.clear()
+            clusterList.add(it.item)
+            startActivity(
+                Intent(
+                    this,
+                    PhotoListActivity::class.java
+                )
+            )
+            true
+        }
+        initCluster()
+        clusterManager.renderer =
+            CustomMapClusterRenderer(this, mMap, clusterManager, binding)
+
+        mMap.setOnCameraMoveListener {
+            //println(mMap!!.cameraPosition.zoom)
+
+            centerMarker!!.position = mMap.cameraPosition.target
+            if (!isPause)
+                isAccuratePoint = false
+        }
+        val uiSetting = mMap.uiSettings
+        uiSetting.isTiltGesturesEnabled = false
+        uiSetting.isRotateGesturesEnabled = false
+        uiSetting.isZoomGesturesEnabled = false
+        uiSetting.isScrollGesturesEnabled = false
+        uiSetting.isCompassEnabled = false
+        //mMap.loa
+    }
+
+    fun initCluster() {
+
+        clusterManager.clearItems()
+        mMap.clear()
+        var polylineOptions = PolylineOptions()
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm")
+            val list = arrayListOf<String>()
+            val dataList = arrayListOf<EventData>()
+            eventList = db.getTrackingLog(trackingNum)
+
+
+            for (item in eventList) {
+                when (item.eventNum) {
+                    0 -> {
+                        MainScope().launch {
+                            mMap.addPolyline(polylineOptions)
+                            polylineOptions = PolylineOptions()
+                        }.join()
+                        trackingLogs.add(item)
+                    }
+                    3 -> {
+                        polylineOptions.add(item.latLng)
+                        list.add(sdf.format(item.time!!))
+                        dataList.add(item)
+                        trackingLogs.add(item)
+                    }
+                    4 -> trackingLogs.add(item)
+                    5 -> {
+                        val item2 = MyItem(item)
+                        try {
+
+                            if (item.bitmap == null) {
+                                item.bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                    contentResolver.loadThumbnail(
+                                        item.uri, Size(640, 640), null
+                                    )
+                                } else {
+                                    MediaStore.Images.Thumbnails.getThumbnail(
+                                        contentResolver, item.uri.lastPathSegment!!.toLong(),
+                                        MediaStore.Images.Thumbnails.MINI_KIND, null
+                                    )
+                                }
+                            }
+                            clusterManager.addItem(
+                                item2
+                            )
+                        } catch (e: FileNotFoundException) {
+
+                            CoroutineScope(Dispatchers.IO).launch {
+
+                                db.delete(item.id!!)
+
+
+                            }
+                        } catch (e: Exception) {
+
+                        }
+                    }
+                }
+
+            }
+
+            launch(Dispatchers.Main) {
+
+                binding.trackingLogList.adapter = ArrayAdapter(
+                    this@MapsActivity,
+                    android.R.layout.simple_list_item_1,
+                    list
+                )
+                binding.trackingLogList.setOnItemClickListener { _: AdapterView<*>, _: View, i: Int, _: Long ->
+                    val item1 = dataList[i]
+                    val idx = trackingLogs.indexOf(item1)
+
+                    nextIdx = idx + 1
+                    goFoward()
+
+
+                }
+                mMap.addPolyline(polylineOptions)
+                polylineOptions = PolylineOptions()
+                clusterManager.cluster()
+                getStartPoint()
+
+                binding.cover.visibility = View.GONE
+            }
+        }
+
+
+    }
+
+    fun nextTracking() {
+        if (nextIdx == trackingLogs.size) {
+            isStop = true
+            isPause = true
+            binding.startBtn.setImageResource(R.drawable.ic_baseline_play_arrow_96)
+            isAccuratePoint = true
+            return
+        }
+        val item = trackingLogs[nextIdx]
+
+        nextIdx++
+        when (item.eventNum) {
+            0 -> {
+                isDiscrete = true
+                nextTracking()
+            }
+            3 -> {
+
+                if (!isPause) {
+
+                    MainScope().launch {
+                        delay(100)
+                        val cameraPosition = CameraUpdateFactory.newCameraPosition(
+                            if (isAuto) {
+                                if (!isDiscrete) {
+
+                                    angle = bearing(
+                                        lastLoc.latitude,
+                                        lastLoc.longitude,
+                                        item.lat!!,
+                                        item.lng!!
+                                    )
+                                    mMap.animateCamera(
+                                        CameraUpdateFactory.newCameraPosition(
+                                            CameraPosition.Builder().target(lastLoc).bearing(angle)
+                                                .zoom(zoomLevels[zoomlevel]).tilt(90F).build()
+                                        ),
+                                        1000 / speed,
+                                        null
+                                    )
+
+                                    delay((500 / speed).toLong())
+                                }
+                                CameraPosition.Builder().target(item.latLng).bearing(angle)
+                                    .zoom(zoomLevels[zoomlevel]).tilt(90F)
+                            } else {
+                                CameraPosition.Builder().target(item.latLng)
+                            }.build()
+                        )
+                        val animateTime =
+
+                            if (isDiscrete) {
+                                isDiscrete = false
+                                1
+
+                            } else {
+                                3000 / speed
+                            }
+                        mMap.animateCamera(
+                            cameraPosition,
+
+                            animateTime,
+                            object :
+                                GoogleMap.CancelableCallback {
+                                override fun onFinish() {
+                                    lastLoc = item.latLng!!
+                                    nextTracking()
+                                }
+
+                                override fun onCancel() {
+
+                                }
+                            })
+
+
+                    }
+
+                }
+            }
+            4 -> {
+                zoomlevel = item.trackingSpeed!!
+                nextTracking()
+            }
+        }
+    }
+
     fun goPrev() {
         mMap.stopAnimation()
         isStop = false
@@ -322,246 +563,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             } else if (item.eventNum == 4) {
                 zoomlevel = item.trackingSpeed!!
 
-            }
-        }
-    }
-
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
-    override fun onMapReady(googleMap: GoogleMap) {
-        mMap = googleMap
-
-
-        clusterManager = ClusterManager(this, mMap)
-        mMap.setOnCameraIdleListener(clusterManager)
-        mMap.setOnMarkerClickListener(clusterManager)
-
-        clusterManager.setOnClusterClickListener {
-            clusterList.clear()
-            for (it in it.items.sortedWith(compareBy<MyItem> { it.item.time })) {
-                clusterList.add(it.item)
-            }
-            clusterList.sortByDescending { (it as EventData).time }
-            startActivity(
-                Intent(
-                    this,
-                    PhotoListActivity::class.java
-                )
-            )
-            true
-        }
-        clusterManager.setOnClusterItemClickListener {
-            clusterList.clear()
-            clusterList.add(it.item)
-            startActivity(
-                Intent(
-                    this,
-                    PhotoListActivity::class.java
-                )
-            )
-            true
-        }
-        initCluster()
-        clusterManager.renderer =
-            CustomMapClusterRenderer(this, mMap, clusterManager, binding)
-
-        mMap.setOnCameraMoveListener {
-            //println(mMap!!.cameraPosition.zoom)
-
-            centerMarker!!.position = mMap.cameraPosition.target
-            if (!isPause)
-                isAccuratePoint = false
-        }
-        val uiSetting = mMap.uiSettings
-        uiSetting.isTiltGesturesEnabled = false
-        uiSetting.isRotateGesturesEnabled = false
-        uiSetting.isZoomGesturesEnabled = false
-        uiSetting.isScrollGesturesEnabled = false
-        uiSetting.isCompassEnabled = false
-        //mMap.loa
-    }
-
-    fun initCluster() {
-
-        clusterManager.clearItems()
-        mMap.clear()
-        var polylineOptions = PolylineOptions()
-
-        CoroutineScope(Dispatchers.IO).launch {
-            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-            val list = arrayListOf<String>()
-            val dataList = arrayListOf<EventData>()
-            eventList = db.getTrackingLog(trackingNum)
-
-
-            for (item in eventList) {
-                when (item.eventNum) {
-                    0 -> {
-                        MainScope().launch {
-                            mMap.addPolyline(polylineOptions)
-                            polylineOptions = PolylineOptions()
-                        }.join()
-                        trackingLogs.add(item)
-                    }
-                    3 -> {
-                        polylineOptions.add(item.latLng)
-                        list.add(sdf.format(item.time!!))
-                        dataList.add(item)
-                        trackingLogs.add(item)
-                    }
-                    4 -> trackingLogs.add(item)
-                    5 -> {
-                        val item2 = MyItem(item)
-                        try {
-
-                            if (item.bitmap == null) {
-                                item.bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                    contentResolver.loadThumbnail(
-                                        item.uri, Size(640, 640), null
-                                    )
-                                } else {
-                                    MediaStore.Images.Thumbnails.getThumbnail(
-                                        contentResolver, item.uri.lastPathSegment!!.toLong(),
-                                        MediaStore.Images.Thumbnails.MINI_KIND, null
-                                    )
-                                }
-                            }
-                            clusterManager.addItem(
-                                item2
-                            )
-                        } catch (e: FileNotFoundException) {
-
-                            CoroutineScope(Dispatchers.IO).launch {
-
-                                db.delete(item.id!!)
-
-
-                            }
-                        } catch (e: Exception) {
-
-                        }
-                    }
-                }
-
-            }
-
-            launch(Dispatchers.Main) {
-
-                binding.trackingLogList.adapter = ArrayAdapter(
-                    this@MapsActivity,
-                    android.R.layout.simple_list_item_1,
-                    list
-                )
-                binding.trackingLogList.setOnItemClickListener { _: AdapterView<*>, _: View, i: Int, _: Long ->
-                    val item1 = dataList[i]
-                    val idx = trackingLogs.indexOf(item1)
-
-                    nextIdx = idx+1
-                    goFoward()
-
-
-                }
-                mMap.addPolyline(polylineOptions)
-                polylineOptions = PolylineOptions()
-                clusterManager.cluster()
-                getStartPoint()
-
-                binding.cover.visibility = View.GONE
-            }
-        }
-
-
-    }
-
-    fun nextTracking() {
-        if (nextIdx == trackingLogs.size) {
-            isStop = true
-            isPause = true
-            binding.startBtn.setImageResource(R.drawable.ic_baseline_play_arrow_96)
-            isAccuratePoint = true
-            return
-        }
-        val item = trackingLogs[nextIdx]
-
-        nextIdx++
-        when (item.eventNum) {
-            0 -> {
-                isDiscrete = true
-                nextTracking()
-            }
-            3 -> {
-
-                if (!isPause) {
-
-                    MainScope().launch {
-                        delay(100)
-                        val cameraPosition = CameraUpdateFactory.newCameraPosition(
-                            if (isAuto) {
-                                if (!isDiscrete) {
-
-                                    angle = bearing(
-                                        lastLoc.latitude,
-                                        lastLoc.longitude,
-                                        item.lat!!,
-                                        item.lng!!
-                                    )
-                                    mMap.animateCamera(
-                                        CameraUpdateFactory.newCameraPosition(
-                                            CameraPosition.Builder().target(lastLoc).bearing(angle)
-                                                .zoom(zoomLevels[zoomlevel]).tilt(90F).build()
-                                        ),
-                                        1000 / speed,
-                                        null
-                                    )
-
-                                    delay((500 / speed).toLong())
-                                }
-                                CameraPosition.Builder().target(item.latLng).bearing(angle)
-                                    .zoom(zoomLevels[zoomlevel]).tilt(90F)
-                            } else {
-                                CameraPosition.Builder().target(item.latLng)
-                            }.build()
-                        )
-                        val animateTime =
-
-                            if (isDiscrete) {
-                                isDiscrete = false
-                                1
-
-                            } else {
-                                3000 / speed
-                            }
-                        mMap.animateCamera(
-                            cameraPosition,
-
-                            animateTime,
-                            object :
-                                GoogleMap.CancelableCallback {
-                                override fun onFinish() {
-                                    lastLoc = item.latLng!!
-                                    nextTracking()
-                                }
-
-                                override fun onCancel() {
-
-                                }
-                            })
-
-
-                    }
-
-                }
-            }
-            4 -> {
-                zoomlevel = item.trackingSpeed!!
-                nextTracking()
             }
         }
     }
@@ -813,8 +814,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     fun changeColor(speed: Int) {
         val btns = arrayListOf(binding.speed1, binding.speed2, binding.speed5, binding.speed10)
         for (btn in btns) {
-            btn.background = null
+            btn.setBackgroundColor(ContextCompat.getColor(this, R.color.dark))
         }
-        btns[speed].setBackgroundColor(Color.YELLOW)
+        btns[speed].setBackgroundResource(R.drawable.gradient_round)
     }
 }

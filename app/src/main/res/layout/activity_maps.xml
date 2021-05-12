@@ -31,7 +31,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="사진을 분류중입니다.\n잠시만 기다려 주세요."
-                android:textColor="@color/white" />
+                android:textSize="18sp" />
         </LinearLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -69,13 +69,11 @@
                 android:layout_width="30dp"
                 android:layout_height="30dp"
                 android:background="@drawable/count_round"
-                android:fontFamily="@font/poppins_regular"
                 android:gravity="center"
                 android:lines="1"
                 android:paddingLeft="4dp"
                 android:paddingRight="4dp"
                 android:text=""
-                android:textColor="#ffffff"
                 android:textSize="12sp"
                 app:layout_constraintLeft_toLeftOf="@id/count10000"
                 app:layout_constraintRight_toRightOf="@id/count10000"
@@ -87,13 +85,11 @@
                 android:layout_width="40dp"
                 android:layout_height="30dp"
                 android:background="@drawable/count_round"
-                android:fontFamily="@font/poppins_regular"
                 android:gravity="center"
                 android:lines="1"
                 android:paddingLeft="4dp"
                 android:paddingRight="4dp"
                 android:text=""
-                android:textColor="#ffffff"
                 android:textSize="12sp"
                 app:layout_constraintLeft_toLeftOf="@id/count10000"
                 app:layout_constraintRight_toRightOf="@id/count10000"
@@ -105,13 +101,11 @@
                 android:layout_width="50dp"
                 android:layout_height="30dp"
                 android:background="@drawable/count_round"
-                android:fontFamily="@font/poppins_regular"
                 android:gravity="center"
                 android:lines="1"
                 android:paddingLeft="4dp"
                 android:paddingRight="4dp"
                 android:text=""
-                android:textColor="#ffffff"
                 android:textSize="12sp"
                 app:layout_constraintRight_toRightOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -171,61 +165,76 @@
                         android:layout_width="0dp"
                         android:layout_height="50dp"
                         android:layout_weight="1"
-                        android:src="@drawable/ic_baseline_fast_rewind_96" />
+                        android:src="@drawable/ic_baseline_fast_rewind_96"
+                        app:tint="@color/white" />
 
                     <ImageView
                         android:id="@+id/start_btn"
                         android:layout_width="0dp"
                         android:layout_height="50dp"
                         android:layout_weight="1"
-                        android:src="@drawable/ic_baseline_play_arrow_96" />
+                        android:src="@drawable/ic_baseline_play_arrow_96"
+                        app:tint="@color/white" />
 
                     <ImageView
                         android:id="@+id/foward_btn"
                         android:layout_width="0dp"
                         android:layout_height="50dp"
                         android:layout_weight="1"
-                        android:src="@drawable/ic_baseline_fast_forward_96" />
+                        android:src="@drawable/ic_baseline_fast_forward_96"
+                        app:tint="@color/white" />
                 </LinearLayout>
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:background="@color/dark"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp">
 
                 <Button
                     android:id="@+id/speed1"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="1배속" />
+                    android:background="@color/dark"
+                    android:text="1배속"
+                    android:textSize="16sp" />
 
                 <Button
                     android:id="@+id/speed2"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="2배속" />
+                    android:background="@color/dark"
+                    android:text="2배속"
+                    android:textSize="16sp" />
 
                 <Button
                     android:id="@+id/speed5"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="5배속" />
+                    android:background="@color/dark"
+                    android:text="5배속"
+                    android:textSize="16sp" />
 
                 <Button
                     android:id="@+id/speed10"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="10배속" />
+                    android:background="@color/dark"
+                    android:text="10배속"
+                    android:textSize="16sp" />
             </LinearLayout>
 
-            <ListView
+            <kim.hanbin.gpstracker.BottomSheetListView
                 android:id="@+id/trackingLogList"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent"
+                android:background="@color/dark" />
 
             <!--com.awesomedev.koreaholdem.BottomSheetListView
                 android:id="@+id/advertiseList"

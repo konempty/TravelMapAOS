@@ -13,6 +13,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class SplashActivity : AppCompatActivity() {
@@ -34,7 +35,7 @@ class SplashActivity : AppCompatActivity() {
         MyPreference.initPreference(this)
         MainScope().launch {
 
-            // delay(2000)
+            delay(2000)
             permission()
         }
     }

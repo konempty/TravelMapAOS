@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/dark"
     android:orientation="vertical"
     tools:context=".MainActivity">
 
@@ -21,28 +22,36 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="사진" />
+            android:background="@color/dusk_light"
+            android:text="사진"
+            android:textSize="18sp" />
 
         <Button
             android:id="@+id/album"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="앨범" />
+            android:background="@drawable/gradient"
+            android:text="앨범"
+            android:textSize="18sp" />
 
         <Button
             android:id="@+id/map"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="지도" />
+            android:background="@color/dusk_light"
+            android:text="지도"
+            android:textSize="18sp" />
 
         <Button
             android:id="@+id/tracking"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="여행" />
+            android:background="@color/dusk_light"
+            android:text="여행"
+            android:textSize="18sp" />
     </LinearLayout>
 
 </LinearLayout>

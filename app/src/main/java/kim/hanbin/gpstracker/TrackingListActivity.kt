@@ -82,6 +82,7 @@ class TrackingListActivity : AppCompatActivity() {
             alert.show()
             true
         }
+        binding.back.setOnClickListener { finish() }
     }
 
     fun refreshList() {
@@ -89,7 +90,7 @@ class TrackingListActivity : AppCompatActivity() {
 
             trackingNumList = db.getAllTrackList()
             val list = arrayListOf<String>()
-            val sdf = SimpleDateFormat("yyyy.MM.dd hh:mm:ss", Locale.KOREAN)
+            val sdf = SimpleDateFormat("yyyy.MM.dd hh:mm:", Locale.KOREAN)
             for (i in trackingNumList)
                 list.add("${i.name}\n${sdf.format(i.startTime)} ~ ${sdf.format(i.endTime)}")
             val adapter: ArrayAdapter<String> =
@@ -98,6 +99,7 @@ class TrackingListActivity : AppCompatActivity() {
                     android.R.layout.simple_list_item_1,
                     list
                 )
+
             launch(Dispatchers.Main) {
                 binding.trackingList.adapter = adapter
             }

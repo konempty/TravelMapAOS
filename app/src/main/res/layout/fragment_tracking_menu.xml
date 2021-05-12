@@ -2,18 +2,33 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:background="@color/dark"
+    android:orientation="vertical"
+    android:paddingLeft="20dp"
+    android:paddingRight="20dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="30dp"
+        android:gravity="center"
+        android:text="여행기록"
+        android:textSize="30dp" />
 
     <Button
         android:id="@+id/trackingStEn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="여행 기록 시작" />
+        android:layout_marginTop="50dp"
+        android:background="@drawable/gradient_round"
+        android:text="여행 기록 시작"
+        android:textSize="18sp" />
 
     <LinearLayout
         android:id="@+id/trackingSetting"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
         android:orientation="vertical"
         android:visibility="gone">
 
@@ -21,37 +36,55 @@
             android:id="@+id/trackingPause"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="여행 기록 일시중지" />
+            android:background="@drawable/dust_light_round"
+            android:text="여행 기록 일시중지"
+            android:textSize="18sp" />
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="기록속도" />
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="0.8"
+                android:gravity="center"
+                android:text="기록속도"
+                android:textSize="18sp" />
 
             <Button
                 android:id="@+id/speed1"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
                 android:layout_weight="1"
-                android:text="1단" />
+                android:background="@drawable/dust_light_round"
+                android:text="1단"
+                android:textSize="18sp" />
 
             <Button
                 android:id="@+id/speed2"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
                 android:layout_weight="1"
-                android:text="2단" />
+                android:background="@drawable/gradient_round"
+                android:text="2단"
+                android:textSize="18sp" />
 
             <Button
                 android:id="@+id/speed3"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
                 android:layout_weight="1"
-                android:text="3단" />
+                android:background="@drawable/dust_light_round"
+                android:text="3단"
+                android:textSize="18sp" />
         </LinearLayout>
     </LinearLayout>
 
@@ -59,6 +92,9 @@
         android:id="@+id/trackingList"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="여행기록 리스트" />
+        android:layout_marginTop="10dp"
+        android:background="@drawable/gradient_round"
+        android:text="여행기록 리스트"
+        android:textSize="18sp" />
 
 </LinearLayout>

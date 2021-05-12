@@ -26,7 +26,7 @@ class MyPreference {
 
         var trackingTime: Long
             get() {
-                return preference.getLong("trackingTime", 300000)
+                return preference.getLong("trackingTime", 150000)
             }
             set(v) {
                 preference.edit().putLong("trackingTime", v).apply()

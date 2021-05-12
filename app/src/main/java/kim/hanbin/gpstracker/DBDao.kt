@@ -56,7 +56,7 @@ interface EventDao {
 
 @Dao
 interface PhotoDataDao {
-    @Query("SELECT * FROM photodata order by addedTime desc")
+    @Query("SELECT * FROM photodata order by modifyTime desc")
     fun getAll(): List<PhotoData>
 
     @Query("SELECT max(id) as id,max(modifyTime) as modifyTime FROM photodata")

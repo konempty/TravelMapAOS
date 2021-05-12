@@ -100,6 +100,12 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         clusterManager.renderer =
             CustomMapClusterRenderer(context!!, mMap!!, clusterManager, binding.markerView)
 
+        val uiSetting = mMap!!.uiSettings
+        uiSetting.isTiltGesturesEnabled = false
+        uiSetting.isRotateGesturesEnabled = false
+        uiSetting.isZoomGesturesEnabled = false
+        uiSetting.isScrollGesturesEnabled = false
+        uiSetting.isCompassEnabled = false
 
     }
 
@@ -112,6 +118,12 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         if (PhotoService.loadComplete)
             MainScope().launch {
                 binding.cover.visibility = View.GONE
+                val uiSetting = mMap!!.uiSettings
+                uiSetting.isTiltGesturesEnabled = true
+                uiSetting.isRotateGesturesEnabled = true
+                uiSetting.isZoomGesturesEnabled = true
+                uiSetting.isScrollGesturesEnabled = true
+                uiSetting.isCompassEnabled = true
                 clusterManager.clearItems()
                 mMap!!.clear()
             }

@@ -3,12 +3,14 @@ package kim.hanbin.gpstracker
 import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import kim.hanbin.gpstracker.databinding.FragmentTrackingMenuBinding
 import kotlinx.coroutines.*
@@ -19,7 +21,7 @@ class TrackingMenuFragment : Fragment() {
     private var mBinding: FragmentTrackingMenuBinding? = null
     private val binding get() = mBinding!!
     val db: EventDao by lazy { InnerDB.getInstance(context!!) }
-    val time = arrayListOf<Long>(60000, 300000, 600000)
+    val time = arrayListOf<Long>(30000, 150000, 300000)
 
 
     override fun onCreateView(
@@ -69,7 +71,7 @@ class TrackingMenuFragment : Fragment() {
                 }
             } else {
 
-                AlertDialog.Builder(context!!).setMessage("여행기록을 끝내시겠습니까?")
+                val dialog = AlertDialog.Builder(context!!,R.style.MyDialogTheme).setMessage("여행기록을 끝내시겠습니까?")
                     .setPositiveButton("예") { dialogInterface: DialogInterface, i: Int ->
                         val dialog = TrackingNameDialog(context!!)
 
@@ -97,7 +99,9 @@ class TrackingMenuFragment : Fragment() {
                         }
                     }
                     .setNegativeButton("아니요") { dialogInterface: DialogInterface, i: Int -> }
-                    .create().show()
+                    .create()
+                dialog.window?.setBackgroundDrawable( ColorDrawable(Color.TRANSPARENT));
+                dialog.show()
             }
 
         }
@@ -173,10 +177,9 @@ class TrackingMenuFragment : Fragment() {
     fun changeColor(speed: Int) {
         val btns = arrayListOf(binding.speed1, binding.speed2, binding.speed3)
         for (btn in btns) {
-            btn.background = null
+            btn.setBackgroundColor(ContextCompat.getColor(context!!, R.color.dark))
         }
-        btns[speed].setBackgroundColor(Color.YELLOW)
+        btns[speed].setBackgroundResource(R.drawable.gradient_round)
     }
-
 
 }

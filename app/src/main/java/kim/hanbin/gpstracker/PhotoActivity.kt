@@ -9,7 +9,6 @@ import android.content.IntentSender
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
-import android.util.Log
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.View
@@ -43,15 +42,16 @@ class PhotoActivity : AppCompatActivity() {
 
     // private var mScaleGestureDetector: ScaleGestureDetector? = null
     val isFromTracking by lazy { intent.getBooleanExtra("isFromTracking", false) }
+
     // private var mScaleFactor = 1.0f
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mBinding = ActivityPhotoBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        val items = arrayOf("Delete")
+        val items = arrayOf("삭제")
         instance = this
         binding.spinner.adapter =
-            ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, items)
+            ArrayAdapter(this,R.layout.custom_spinner_dropdown_item, items)
         binding.spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
                 when (p2) {
@@ -169,10 +169,11 @@ class PhotoActivity : AppCompatActivity() {
             DeleteImg()
         }
     }
-    fun DeletefromTrackingMap(item:EventData){
 
-            PhotoListActivity.photoList.remove(item)
-            MapsActivity.instance.initCluster()
+    fun DeletefromTrackingMap(item: EventData) {
+
+        PhotoListActivity.photoList.remove(item)
+        MapsActivity.instance.initCluster()
 
     }
 
