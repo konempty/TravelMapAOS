@@ -4,9 +4,11 @@
         <item name="fontFamily">@font/bmjua</item>
         <item name="android:textColor">@color/white</item>
     </style>
+
     <style name="MyDialogTheme" parent="Theme.AppCompat.Light.Dialog.Alert">
         <item name="android:background">@drawable/dark_round</item>
         <item name="colorAccent">@color/white</item>
         <item name="android:textColorPrimary">@color/white</item>
+        <item name="textColorAlertDialogListItem">@color/white</item>
     </style>
 </resources>

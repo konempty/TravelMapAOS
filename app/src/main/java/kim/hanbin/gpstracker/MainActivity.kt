@@ -3,6 +3,7 @@ package kim.hanbin.gpstracker
 import android.app.Activity
 import android.app.Application
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
@@ -11,10 +12,16 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import kim.hanbin.gpstracker.databinding.ActivityMainBinding
+import java.util.concurrent.Semaphore
 
 
 class MainActivity : AppCompatActivity(), Application.ActivityLifecycleCallbacks {
     // 전역 변수로 바인딩 객체 선언
+    companion object {
+        var instance: MainActivity? = null
+        val semaphore = Semaphore(1)
+    }
+
     val btns: ArrayList<Button> by lazy {
         arrayListOf(
             binding.photo,
@@ -33,6 +40,9 @@ class MainActivity : AppCompatActivity(), Application.ActivityLifecycleCallbacks
         super.onCreate(savedInstanceState)
         mBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        if (instance != null)
+            application.unregisterActivityLifecycleCallbacks(instance)
+        application.registerActivityLifecycleCallbacks(this)
         val pagerAdapter = ScreenSlidePagerAdapter(this)
         binding.pager.adapter = pagerAdapter
         changeFragment(1)
@@ -44,8 +54,25 @@ class MainActivity : AppCompatActivity(), Application.ActivityLifecycleCallbacks
         binding.pager.isUserInputEnabled = false;
         binding.pager.setPageTransformer(null)
         binding.pager.animation = null
-        application.registerActivityLifecycleCallbacks(this)
-        startService(Intent(this, PhotoService::class.java))
+        instance = this
+        semaphore.acquire()
+        if (!PhotoService.isRunning) {
+            startService(Intent(this, PhotoService::class.java))
+        }
+        semaphore.release()
+        if (MyPreference.trackingState != 0) {
+
+            if (MyPreference.trackingState != 1) {
+                if (GPSTrackingService.instance == null) {
+                    val i = Intent(this, GPSTrackingService::class.java);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(i);
+                    } else {
+                        startService(i);
+                    }
+                }
+            }
+        }
     }
 
 
@@ -55,7 +82,7 @@ class MainActivity : AppCompatActivity(), Application.ActivityLifecycleCallbacks
 
         override fun createFragment(position: Int): Fragment {
             return when (position) {
-                0 -> PhotoListFragment()
+                0 -> DailyPhotoListFragment()
                 1 -> AlbumFragment()
                 2 -> MapFragment()
                 else -> TrackingMenuFragment()
@@ -78,10 +105,12 @@ class MainActivity : AppCompatActivity(), Application.ActivityLifecycleCallbacks
     }
 
     override fun onActivityStarted(p0: Activity) {
-        if (++activityReferences == 1 && !isActivityChangingConfigurations&&!PhotoService.isRunning) {
+        semaphore.acquire()
+        if (++activityReferences == 1 && !isActivityChangingConfigurations && !PhotoService.isRunning) {
 
-                startService(Intent(this, PhotoService::class.java))
+            startService(Intent(this, PhotoService::class.java))
         }
+        semaphore.release()
     }
 
     override fun onActivityResumed(p0: Activity) {

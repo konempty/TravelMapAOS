@@ -4,17 +4,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/dark"
+    android:descendantFocusability="blocksDescendants"
     android:orientation="vertical"
     android:paddingLeft="5dp"
     android:paddingRight="5dp"
-    android:descendantFocusability="blocksDescendants"
-  tools:context=".PhotoListFragment">
+    tools:context=".PhotoListFragment">
 
     <ListView
         android:id="@+id/list"
-        android:clickable="true"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:clickable="true"
         android:divider="@null"
         android:focusable="true" />
 

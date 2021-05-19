@@ -6,6 +6,8 @@ import android.content.ContentValues
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.IntentSender
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -51,38 +53,41 @@ class PhotoActivity : AppCompatActivity() {
         val items = arrayOf("삭제")
         instance = this
         binding.spinner.adapter =
-            ArrayAdapter(this,R.layout.custom_spinner_dropdown_item, items)
+            ArrayAdapter(this, R.layout.custom_spinner_dropdown_item, items)
         binding.spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
                 when (p2) {
                     0 -> {
                         if (isMenuClicked) {
-                            AlertDialog.Builder(this@PhotoActivity)
-                                .setTitle("이 사진을 지우시겠습니까?")
-                                .setNegativeButton("아니오") { dialogInterface: DialogInterface, i: Int ->
-                                }
-                                .setPositiveButton("예") { dialogInterface: DialogInterface, i: Int ->
-                                    if (isFromTracking) {
-                                        val item =
-                                            PhotoListActivity.photoList[binding.pager.currentItem] as EventData
-                                        AlertDialog.Builder(this@PhotoActivity)
-                                            .setTitle("이 사진을 여행기록에서만 지우시겠습니까?")
-                                            .setNegativeButton("기기에서 완전삭제") { dialogInterface: DialogInterface, i: Int ->
-                                                DeleteImg()
-                                                DeletefromTrackingMap(item)
-                                            }
-                                            .setPositiveButton("여행기록에서만 삭제") { dialogInterface: DialogInterface, i: Int ->
-                                                DeletefromTrackingMap(item)
-                                                DeleteTrackingLog(item.pictureId!!)
-                                                finish()
-                                            }.create().show()
-                                    } else {
-
-                                        DeleteImg()
+                            val dialog =
+                                AlertDialog.Builder(this@PhotoActivity, R.style.MyDialogTheme)
+                                    .setTitle("이 항목을 지우시겠습니까?")
+                                    .setNegativeButton("아니오") { dialogInterface: DialogInterface, i: Int ->
                                     }
-                                }
-                                .setMessage("사진을 지우면 복구가 불가능 합니다. 정말로 이 사진을 지우시겠습니까?")
-                                .create().show()
+                                    .setPositiveButton("예") { dialogInterface: DialogInterface, i: Int ->
+                                        if (isFromTracking) {
+                                            val item =
+                                                PhotoListActivity.photoList[binding.pager.currentItem] as EventData
+                                            AlertDialog.Builder(this@PhotoActivity)
+                                                .setTitle("이 항목을 여행기록에서만 지우시겠습니까?")
+                                                .setNegativeButton("기기에서 완전삭제") { dialogInterface: DialogInterface, i: Int ->
+                                                    DeleteImg()
+                                                    DeletefromTrackingMap(item)
+                                                }
+                                                .setPositiveButton("여행기록에서만 삭제") { dialogInterface: DialogInterface, i: Int ->
+                                                    DeletefromTrackingMap(item)
+                                                    DeleteTrackingLog(item.pictureId!!)
+                                                    finish()
+                                                }.create().show()
+                                        } else {
+
+                                            DeleteImg()
+                                        }
+                                    }
+                                    .setMessage("삭제한뒤 복구는 불가능 합니다. 정말로 이 항목을 지우시겠습니까?")
+                                    .create()
+                            dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                            dialog.show()
 
                         }
                     }
@@ -245,7 +250,7 @@ class PhotoActivity : AppCompatActivity() {
                                             launch(Dispatchers.Main) {
                                                 AlbumFragment.instance?.refresh()
                                                 MapFragment.instance?.refresh()
-                                                PhotoListFragment.instance?.refresh()
+                                                DailyPhotoListFragment.instance?.refresh()
                                                 finish()
                                             }
                                             return@launch

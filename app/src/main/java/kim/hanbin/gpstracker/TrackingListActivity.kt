@@ -2,6 +2,8 @@ package kim.hanbin.gpstracker
 
 import android.content.DialogInterface
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.View
 import android.widget.AdapterView
@@ -39,14 +41,14 @@ class TrackingListActivity : AppCompatActivity() {
             val item = trackingNumList[i]
             val actions = arrayOf<CharSequence>("삭제", "이름변경")
 
-            val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+            val builder: AlertDialog.Builder = AlertDialog.Builder(this, R.style.MyDialogTheme)
 
             builder.setTitle(item.name)
             builder.setItems(
                 actions
             ) { dialog, i ->
                 if (i == 0) {
-                    android.app.AlertDialog.Builder(this)
+                    val dialog2 = AlertDialog.Builder(this, R.style.MyDialogTheme)
                         .setMessage("정말로 '${item.name}'을(를) 삭제하시겠습니까?\n삭제후 복구는 불가능합니다.")
                         .setPositiveButton("예") { dialogInterface: DialogInterface, i: Int ->
                             CoroutineScope(Dispatchers.IO).launch {
@@ -55,7 +57,9 @@ class TrackingListActivity : AppCompatActivity() {
                             }
                         }
                         .setNegativeButton("아니요") { dialogInterface: DialogInterface, i: Int -> }
-                        .create().show()
+                        .create()
+                    dialog2.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                    dialog2.show()
                 } else {
                     val dialog = TrackingNameDialog(this)
                     dialog.setTitle("여행기록저장")
@@ -77,9 +81,10 @@ class TrackingListActivity : AppCompatActivity() {
                 }
             }
 
-            val alert: AlertDialog = builder.create()
+            val dialog: AlertDialog = builder.create()
+            dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
-            alert.show()
+            dialog.show()
             true
         }
         binding.back.setOnClickListener { finish() }
@@ -90,7 +95,7 @@ class TrackingListActivity : AppCompatActivity() {
 
             trackingNumList = db.getAllTrackList()
             val list = arrayListOf<String>()
-            val sdf = SimpleDateFormat("yyyy.MM.dd hh:mm:", Locale.KOREAN)
+            val sdf = SimpleDateFormat("yyyy.MM.dd hh:mm", Locale.KOREAN)
             for (i in trackingNumList)
                 list.add("${i.name}\n${sdf.format(i.startTime)} ~ ${sdf.format(i.endTime)}")
             val adapter: ArrayAdapter<String> =

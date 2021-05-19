@@ -7,7 +7,6 @@ import android.os.IBinder
 import android.provider.MediaStore
 import androidx.exifinterface.media.ExifInterface
 import kotlinx.coroutines.*
-import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.Semaphore
 
@@ -16,15 +15,14 @@ class PhotoService : Service() {
 
         val imageListMap = mutableMapOf<String, MutableList<BaseData>>()
         val imageListDailyMap = mutableMapOf<Date, MutableList<BaseData>>()
-        val imageList = arrayListOf<BaseData>()
+        val imageList = Collections.synchronizedList(arrayListOf<BaseData>())
         var galleryPlace: List<PhotoData> = arrayListOf()
         var isRunning = false
 
         fun refresh() {
             MainScope().launch {
-                MapFragment.instance?.refresh()
                 AlbumFragment.instance?.refresh()
-                PhotoListFragment.instance?.refresh()
+                DailyPhotoListFragment.instance?.refresh()
             }
         }
 
@@ -79,14 +77,11 @@ class PhotoService : Service() {
             delay(100)
             init()
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            }
         }
         return START_STICKY
     }
 
     val db: PhotoDataDao by lazy { InnerDB.getPhotoInstance(this) }
-    val sdf = SimpleDateFormat("yyyy년 MM월 dd일", Locale.KOREAN)
 
     fun init() {
         loadComplete = false
@@ -136,7 +131,8 @@ class PhotoService : Service() {
         imageList.clear()
         for (photo in list) {
             val parent = photo.path
-            val date = sdf.parse(sdf.format(photo.modifyTime!!*1000))!!
+
+            val date = Date(photo.modifyTime!! / 86400 * 86400000) // 날짜로 구별할수 있도록 시분초를 없앤다
             if (!imageListMap.containsKey(parent)) {
                 imageListMap[parent!!] = mutableListOf()
             }
@@ -194,7 +190,7 @@ class PhotoService : Service() {
                 // Stores column values and the contentUri in a local object
                 // that represents the media file.
 
-                val date = sdf.parse(sdf.format(modify*1000))!!
+                val date = Date(modify / 86400 * 86400000)// 날짜로 구별할수 있도록 시분초를 없앤다
 
                 if (!imageListMap.containsKey(parent) || imageListMap[parent] == null) {
                     imageListMap[parent] = mutableListOf()
@@ -284,8 +280,8 @@ class PhotoService : Service() {
         loadComplete = true
         galleryPlace = db.getGaleryPlace()
         MapFragment.instance?.refresh()
-        stopSelf()
         isRunning = false
+        stopSelf()
     }
 
 }

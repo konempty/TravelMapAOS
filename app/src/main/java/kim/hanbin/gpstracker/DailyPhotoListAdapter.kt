@@ -21,25 +21,25 @@ import java.io.FileNotFoundException
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 
 
-class DailyPhotoListAdapter(val parent: ViewGroup, var map: Map<Date, List<BaseData>>) :
+class DailyPhotoListAdapter(val parent: ViewGroup, val map: Map<Date, List<BaseData>>) :
     BaseAdapter() {
     private val listViewItemList: ArrayList<List<BaseData>> = ArrayList()
     val sdf = SimpleDateFormat("yyyy년 MM월 dd일", Locale.KOREAN)
     var keys = map.keys.sortedDescending()
     val context: Context = parent.context
     val inflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+    val viewMap = mutableMapOf<Int, View>()
 
 
     override fun getCount(): Int {
-        return keys.size
+        return map.size
     }
 
     // position에 위치한 데이터를 화면에 출력하는데 사용될 View를 리턴. : 필수 구현
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-        val convertView: View = getConvertView(position, convertView)
+        val convertView: View = getConvertView(position)
 
         /*recyclerView.adapter = PhotoListItemAdapter(listViewItem, context, false) {
             val item = it.item
@@ -65,33 +65,32 @@ class DailyPhotoListAdapter(val parent: ViewGroup, var map: Map<Date, List<BaseD
         return listViewItemList[position]
     }
 
-    fun getConvertView(position: Int, view: View?): View {
+    fun getConvertView(position: Int): View {
         val k = keys[position]
-
-        var convertView = view
-        if (convertView == null) {
-            convertView = inflater.inflate(R.layout.daily_photo_list_item, parent, false)
-
-
+        if (viewMap.containsKey(position)) {
+            notifyDataSetChanged()
+            return viewMap[position]!!
         }
+        val convertView = inflater.inflate(R.layout.daily_photo_list_item, parent, false)
+
+        viewMap[position] = convertView
+
         val listViewItem = listViewItemList[position]
 
 
         // 화면에 표시될 View(Layout이 inflate된)으로부터 위젯에 대한 참조 획득
-        val datetv = convertView!!.findViewById<TextView>(R.id.date)
         val constraintLayout =
             convertView.findViewById<ConstraintLayout>(R.id.constraintLayout)
-        constraintLayout.removeAllViews()
-        /* for (view in array) {
-        view.visibility = View.GONE
-    }*/
+        val datetv = convertView.findViewById<TextView>(R.id.date)
         datetv.text = sdf.format(k)
 
         var count = 0
         var prevView: View = constraintLayout
         for (item in listViewItem) {
+
             val imageView = ImageView(context)
             imageView.id = ViewCompat.generateViewId()
+
             imageView.setOnClickListener {
 
                 PhotoListActivity.photoList =
@@ -101,17 +100,16 @@ class DailyPhotoListAdapter(val parent: ViewGroup, var map: Map<Date, List<BaseD
                     Intent(context, PhotoActivity::class.java).putExtra(
                         "id",
                         (item as PhotoData).id
-                    )
-                        .putExtra("isFromTracking", false)
+                    ).putExtra("isFromTracking", false)
                 )
             }
             imageView.visibility = View.VISIBLE
             imageView.setImageDrawable(null)
             /*
-       app:layout_constraintDimensionRatio="H3,1"
-       app:layout_constraintLeft_toLeftOf="parent"
-       app:layout_constraintTop_toTopOf="parent"
-       app:layout_constraintWidth_percent="0.3"*/
+   app:layout_constraintDimensionRatio="H3,1"
+   app:layout_constraintLeft_toLeftOf="parent"
+   app:layout_constraintTop_toTopOf="parent"
+   app:layout_constraintWidth_percent="0.3"*/
             val layoutParams = ConstraintLayout.LayoutParams(0, 0)
             imageView.layoutParams = layoutParams
             imageView.scaleType = ImageView.ScaleType.CENTER_CROP
@@ -148,6 +146,7 @@ class DailyPhotoListAdapter(val parent: ViewGroup, var map: Map<Date, List<BaseD
             }
             prevView = imageView
             constraintLayout.addView(imageView, count)
+
             CoroutineScope(Dispatchers.IO).launch {
                 try {
 
@@ -189,7 +188,7 @@ class DailyPhotoListAdapter(val parent: ViewGroup, var map: Map<Date, List<BaseD
         val tri = (count / 3) * 3 + if (count % 3 == 0) 0 else 3
         for (i in count until tri) {
             val imageView = ImageView(context)
-            imageView.id = ViewCompat.generateViewId()
+            imageView.id = ViewCompat.generateViewId();
 
             val layoutParams = ConstraintLayout.LayoutParams(0, 0)
             imageView.layoutParams = layoutParams
@@ -229,11 +228,20 @@ class DailyPhotoListAdapter(val parent: ViewGroup, var map: Map<Date, List<BaseD
             count++
         }
 
-        return convertView
+        return convertView!!
     }
 
     init {
         for (k in keys)
             listViewItemList.add(map[k]!!.sortedByDescending { (it as PhotoData).modifyTime })
+    }
+
+    fun notifyDataSetChanged(b: Boolean) {
+        keys = map.keys.sortedDescending()
+        listViewItemList.clear()
+        viewMap.clear()
+        for (k in keys)
+            listViewItemList.add(map[k]!!.sortedByDescending { (it as PhotoData).modifyTime })
+        super.notifyDataSetChanged()
     }
 }

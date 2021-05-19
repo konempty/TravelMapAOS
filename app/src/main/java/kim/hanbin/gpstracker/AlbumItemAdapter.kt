@@ -54,67 +54,66 @@ class AlbumItemAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         var i = 0
 
-        synchronized(map) {
-            for (entry in map) {
-                if (i == position) {
-                    val splts = entry.key.split("/")
+        for (entry in map) {
+            if (i == position) {
+                val splts = entry.key.split("/")
 
-                    setView(holder, splts[splts.size - 2], entry.value.size)
+                setView(holder, splts[splts.size - 2], entry.value.size)
 
-                    if (entry.value.isEmpty()) {
-                        map.remove(entry.key)
-                        return
-                    }
-                    entry.value.sortedByDescending { (it as PhotoData).modifyTime }
-                    val it = entry.value.first()
-
-
-                    holder.itemView.findViewById<ImageView>(R.id.playBtn).visibility =
-                        if (it.isVideo == true) {
-                            View.VISIBLE
-                        } else {
-                            View.GONE
-                        }
-                    try {
-
-                        if (it.bitmap == null) {
-                            it.bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                context.contentResolver.loadThumbnail(
-                                    it.uri, Size(640, 640), null
-                                )
-                            } else {
-                                MediaStore.Images.Thumbnails.getThumbnail(
-                                    context.contentResolver, it.uri.lastPathSegment!!.toLong(),
-                                    MediaStore.Images.Thumbnails.MINI_KIND, null
-                                )
-                            }
-                        }
-                        holder.img.setImageBitmap(it.bitmap)
-                    } catch (e: FileNotFoundException) {
-
-                        CoroutineScope(Dispatchers.IO).launch {
-
-                            val db = InnerDB.getInstance(context)
-                            db.delete((it as PhotoData).id!!)
-                            entry.value.remove(it)
-                            if (entry.value.size == 0)
-                                PhotoService.imageListMap.remove(entry.key)
-                            MainScope().launch {
-                                delay(100)
-                                notifyDataSetChanged()
-                            }
-
-
-                        }
-                    } catch (e: Exception) {
-
-                    }
-                    holder.path = entry.key
+                if (entry.value.isEmpty()) {
+                    map.remove(entry.key)
                     return
                 }
-                i++
+                entry.value.sortByDescending { (it as PhotoData).modifyTime }
+                val it = entry.value.first()
+
+
+                holder.itemView.findViewById<ImageView>(R.id.playBtn).visibility =
+                    if (it.isVideo == true) {
+                        View.VISIBLE
+                    } else {
+                        View.GONE
+                    }
+                try {
+
+                    if (it.bitmap == null) {
+                        it.bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            context.contentResolver.loadThumbnail(
+                                it.uri, Size(640, 640), null
+                            )
+                        } else {
+                            MediaStore.Images.Thumbnails.getThumbnail(
+                                context.contentResolver, it.uri.lastPathSegment!!.toLong(),
+                                MediaStore.Images.Thumbnails.MINI_KIND, null
+                            )
+                        }
+                    }
+                    holder.img.setImageBitmap(it.bitmap)
+                } catch (e: FileNotFoundException) {
+
+                    CoroutineScope(Dispatchers.IO).launch {
+
+                        val db = InnerDB.getInstance(context)
+                        db.delete((it as PhotoData).id!!)
+                        entry.value.remove(it)
+                        if (entry.value.size == 0)
+                            PhotoService.imageListMap.remove(entry.key)
+                        MainScope().launch {
+                            delay(100)
+                            notifyDataSetChanged()
+                        }
+
+
+                    }
+                } catch (e: Exception) {
+
+                }
+                holder.path = entry.key
+                return
             }
+            i++
         }
+
     }
 
     override fun getItemCount(): Int {

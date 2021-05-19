@@ -41,10 +41,9 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
     private var mBinding: ActivityMapsBinding? = null
     private val binding get() = mBinding!!
-
-
     var beforeList: List<BaseData>? = null
 
+    var initing = false
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -109,7 +108,6 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
     }
 
-    var initing = false
 
     fun initCluster() {
         if (initing)
@@ -294,12 +292,6 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        if (mMap != null && beforeList != PhotoService.galleryPlace) {
-            initCluster()
-        }
-    }
 
     override fun onDestroy() {
         super.onDestroy()

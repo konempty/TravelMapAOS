@@ -38,14 +38,6 @@ class TrackingMenuFragment : Fragment() {
             if (MyPreference.trackingState == 1)
                 binding.trackingPause.text = "여행 기록 재개"
             else {
-                if (GPSTrackingService.instance == null) {
-                    val i = Intent(context, GPSTrackingService::class.java);
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        context!!.startForegroundService(i);
-                    } else {
-                        context!!.startService(i);
-                    }
-                }
                 binding.trackingPause.text = "여행 기록 일시중지"
             }
 
@@ -71,7 +63,8 @@ class TrackingMenuFragment : Fragment() {
                 }
             } else {
 
-                val dialog = AlertDialog.Builder(context!!,R.style.MyDialogTheme).setMessage("여행기록을 끝내시겠습니까?")
+                val dialog = AlertDialog.Builder(context!!, R.style.MyDialogTheme)
+                    .setMessage("여행기록을 끝내시겠습니까?")
                     .setPositiveButton("예") { dialogInterface: DialogInterface, i: Int ->
                         val dialog = TrackingNameDialog(context!!)
 
@@ -100,7 +93,7 @@ class TrackingMenuFragment : Fragment() {
                     }
                     .setNegativeButton("아니요") { dialogInterface: DialogInterface, i: Int -> }
                     .create()
-                dialog.window?.setBackgroundDrawable( ColorDrawable(Color.TRANSPARENT));
+                dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT));
                 dialog.show()
             }
 

@@ -21,7 +21,7 @@ class SplashActivity : AppCompatActivity() {
     var Permissions = arrayListOf(
         Manifest.permission.READ_EXTERNAL_STORAGE,
         Manifest.permission.ACCESS_MEDIA_LOCATION,
-        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)Manifest.permission.ACCESS_BACKGROUND_LOCATION else Manifest.permission.WRITE_EXTERNAL_STORAGE,
         Manifest.permission.ACCESS_COARSE_LOCATION,
         Manifest.permission.ACCESS_FINE_LOCATION
     )
@@ -29,9 +29,7 @@ class SplashActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !Permissions.contains(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
-            Permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-        }
+
         MyPreference.initPreference(this)
         MainScope().launch {
 

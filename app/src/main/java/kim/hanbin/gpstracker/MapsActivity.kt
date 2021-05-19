@@ -58,6 +58,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     var centerMarker: Marker? = null
     var isAccuratePoint = true
     var bottomSheetBehavior: BottomSheetBehavior<View>? = null
+    var lastLocIdx = -1
 
     companion object {
 
@@ -163,39 +164,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         changeColor(0)
     }
 
-    fun goFoward() {
-        mMap.stopAnimation()
-        if (nextIdx <= trackingLogs.size) {
-            val item = trackingLogs[nextIdx - 1]
-
-
-            val cameraPosition = CameraUpdateFactory.newCameraPosition(
-                if (isAuto) {
-
-                    angle = bearing(
-                        lastLoc.latitude,
-                        lastLoc.longitude,
-                        item.latLng!!.latitude,
-                        item.latLng!!.longitude
-                    )
-
-                    CameraPosition.Builder().bearing(angle).zoom(zoomLevels[zoomlevel])
-                        .tilt(90F)
-
-                } else {
-                    CameraPosition.Builder()
-                }.target(item.latLng).build()
-            )
-            mMap.moveCamera(cameraPosition)
-            lastLoc = item.latLng!!
-            centerMarker!!.position = lastLoc
-            isAccuratePoint = true
-
-
-
-            nextTracking()
-        }
-    }
 
     /**
      * Manipulates the map once available.
@@ -249,6 +217,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             centerMarker!!.position = mMap.cameraPosition.target
             if (!isPause)
                 isAccuratePoint = false
+            else {
+                mMap.stopAnimation()
+            }
         }
         val uiSetting = mMap.uiSettings
         uiSetting.isTiltGesturesEnabled = false
@@ -271,7 +242,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             val dataList = arrayListOf<EventData>()
             eventList = db.getTrackingLog(trackingNum)
 
-
             for (item in eventList) {
                 when (item.eventNum) {
                     0 -> {
@@ -282,6 +252,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                         trackingLogs.add(item)
                     }
                     3 -> {
+                        lastLocIdx = trackingLogs.size
                         polylineOptions.add(item.latLng)
                         list.add(sdf.format(item.time!!))
                         dataList.add(item)
@@ -320,7 +291,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                         }
                     }
                 }
-
             }
 
             launch(Dispatchers.Main) {
@@ -331,9 +301,15 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     list
                 )
                 binding.trackingLogList.setOnItemClickListener { _: AdapterView<*>, _: View, i: Int, _: Long ->
+                    if (i != 0)
+                        isStop = false
                     val item1 = dataList[i]
                     val idx = trackingLogs.indexOf(item1)
-
+                    for (i in 0..idx) {
+                        val item = trackingLogs[i]
+                        if (item.eventNum == 4)
+                            zoomlevel = item.trackingSpeed!!
+                    }
                     nextIdx = idx + 1
                     goFoward()
 
@@ -437,14 +413,50 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    fun goFoward() {
+        if (nextIdx <= trackingLogs.size) {
+            mMap.stopAnimation()
+            val item = trackingLogs[nextIdx - 1]
+
+
+            val cameraPosition = CameraUpdateFactory.newCameraPosition(
+                if (isAuto) {
+
+                    angle = bearing(
+                        lastLoc.latitude,
+                        lastLoc.longitude,
+                        item.latLng!!.latitude,
+                        item.latLng!!.longitude
+                    )
+
+                    CameraPosition.Builder().bearing(angle).zoom(zoomLevels[zoomlevel])
+                        .tilt(90F)
+
+                } else {
+                    CameraPosition.Builder()
+                }.target(item.latLng).build()
+            )
+            mMap.moveCamera(cameraPosition)
+            lastLoc = item.latLng!!
+            centerMarker!!.position = lastLoc
+            isAccuratePoint = true
+
+
+
+            nextTracking()
+        }
+    }
+
     fun goPrev() {
+        if (nextIdx != trackingLogs.size && isStop)
+            return
         mMap.stopAnimation()
-        isStop = false
-        val back = if (isAccuratePoint) {
+        val back = if (isAccuratePoint && !isStop) {
             2
         } else {
             1
         } //얼마만큼 이전으로 돌아가서 찾아야 하는지
+        isStop = false
         var item = trackingLogs[nextIdx - back]
         for (idx in nextIdx - back downTo 0) {
             val item2 = trackingLogs[idx]
@@ -494,6 +506,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 isDiscrete = true
             }
         }
+        isAccuratePoint = true
         if (prevItem.eventNum == 3) {
             val cameraPosition = CameraUpdateFactory.newCameraPosition(
                 if (isAuto) {
@@ -510,8 +523,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             lastLoc = prevItem.latLng!!
             centerMarker!!.position = lastLoc
         }
-        isAccuratePoint = true
         nextTracking()
+
     }
 
     fun getStartPoint() {
@@ -526,6 +539,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 centerMarker = mMap.addMarker(
                     MarkerOptions()
                         .position(item.latLng!!)
+                        .icon(BitmapDescriptorFactory.defaultMarker(229f))
                 )
                 for (idx in nextIdx until trackingLogs.size) {
                     if (trackingLogs[idx].eventNum == 3) {
@@ -565,6 +579,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
             }
         }
+
     }
 
     inner class MyItem(
