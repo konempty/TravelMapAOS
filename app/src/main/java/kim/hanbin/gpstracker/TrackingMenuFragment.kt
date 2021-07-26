@@ -20,7 +20,7 @@ class TrackingMenuFragment : Fragment() {
 
     private var mBinding: FragmentTrackingMenuBinding? = null
     private val binding get() = mBinding!!
-    val db: EventDao by lazy { InnerDB.getInstance(context!!) }
+    val db: EventDao by lazy { InnerDB.getInstance(requireContext()) }
     val time = arrayListOf<Long>(30000, 150000, 300000)
 
 
@@ -63,10 +63,10 @@ class TrackingMenuFragment : Fragment() {
                 }
             } else {
 
-                val dialog = AlertDialog.Builder(context!!, R.style.MyDialogTheme)
+                val dialog = AlertDialog.Builder(requireContext(), R.style.MyDialogTheme)
                     .setMessage("여행기록을 끝내시겠습니까?")
                     .setPositiveButton("예") { dialogInterface: DialogInterface, i: Int ->
-                        val dialog = TrackingNameDialog(context!!)
+                        val dialog = TrackingNameDialog(requireContext())
 
                         CoroutineScope(Dispatchers.IO).launch {
                             val trackingnum = db.getTrackingNum()!!
@@ -147,9 +147,9 @@ class TrackingMenuFragment : Fragment() {
     fun startService() {
         val i = Intent(context, GPSTrackingService::class.java);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context!!.startForegroundService(i);
+            requireContext().startForegroundService(i);
         } else {
-            context!!.startService(i);
+            requireContext().startService(i);
         }
     }
 
@@ -170,7 +170,7 @@ class TrackingMenuFragment : Fragment() {
     fun changeColor(speed: Int) {
         val btns = arrayListOf(binding.speed1, binding.speed2, binding.speed3)
         for (btn in btns) {
-            btn.setBackgroundColor(ContextCompat.getColor(context!!, R.color.dark))
+            btn.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.dark))
         }
         btns[speed].setBackgroundResource(R.drawable.gradient_round)
     }

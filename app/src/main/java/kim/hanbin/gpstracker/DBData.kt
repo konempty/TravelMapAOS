@@ -76,7 +76,7 @@ data class PhotoData(
 
 /*
 * eventNum
-* 0 : 트래킹 시작
+* 0 : 트래킹 시작/재시작
 * 1 : 트래킹 일시중지
 * 2 : 트래킹 마침
 * 3 : 위치데이터 수신
@@ -104,7 +104,7 @@ data class EventData(
         path: String?,
         isVideo: Boolean?,
         trackingSpeed: Int?,
-        time: Date?
+        time: Date
     ) : this(id, trackingNum, eventNum, pictureId, trackingSpeed, time) {
         super.name = name
         super.path = path

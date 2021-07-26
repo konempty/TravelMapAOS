@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -20,8 +22,6 @@ class SplashActivity : AppCompatActivity() {
     var isBack = false
     var Permissions = arrayListOf(
         Manifest.permission.READ_EXTERNAL_STORAGE,
-        Manifest.permission.ACCESS_MEDIA_LOCATION,
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)Manifest.permission.ACCESS_BACKGROUND_LOCATION else Manifest.permission.WRITE_EXTERNAL_STORAGE,
         Manifest.permission.ACCESS_COARSE_LOCATION,
         Manifest.permission.ACCESS_FINE_LOCATION
     )
@@ -31,6 +31,12 @@ class SplashActivity : AppCompatActivity() {
         setContentView(R.layout.activity_splash)
 
         MyPreference.initPreference(this)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            Permissions.add(Manifest.permission.ACCESS_MEDIA_LOCATION)
+            Permissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        } else {
+            Permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        }
         MainScope().launch {
 
             delay(2000)
@@ -121,12 +127,16 @@ class SplashActivity : AppCompatActivity() {
                     }
                 }
             }
-            AlertDialog.Builder(this)
+            val dialog = AlertDialog.Builder(this, R.style.MyDialogTheme)
                 .setTitle("권한 없음")
                 .setMessage("권한이 없습니다. 권한없이는 앱을 사용 할수 없습니다.")
                 .setPositiveButton(
                     "확인"
-                ) { dialogInterface, i -> finish() }.create().show()
+                ) { dialogInterface, i -> finish() }.create()
+
+            dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+            dialog.show()
         }
     }
 
@@ -136,9 +146,9 @@ class SplashActivity : AppCompatActivity() {
             startActivity(intent) //다음화면으로 넘어감
             finish()
         } else {
-            AlertDialog.Builder(this)
+            val dialog = AlertDialog.Builder(this, R.style.MyDialogTheme)
                 .setTitle("권한요청")
-                .setMessage("정확한 위치 탐색을 위해선 권한이 필요합니다.")
+                .setMessage("정확한 위치 탐색을 위해선 백그라운드 실행에 동의를 해주세요.")
                 .setPositiveButton(
                     "확인"
                 ) { dialogInterface, i ->
@@ -147,7 +157,10 @@ class SplashActivity : AppCompatActivity() {
                     intent.data = Uri.parse("package:$packageName")
                     startActivity(intent)
                     isBack = true
-                }.create().show()
+                }.create()
+
+            dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            dialog.show()
         }
     }
 

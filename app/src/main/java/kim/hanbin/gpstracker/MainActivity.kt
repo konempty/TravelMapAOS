@@ -99,6 +99,8 @@ class MainActivity : AppCompatActivity(), Application.ActivityLifecycleCallbacks
         btns[idx].setBackgroundResource(R.drawable.gradient)
 
         binding.pager.currentItem = idx
+        if (idx == 0)
+            DailyPhotoListFragment.instance?.refreshHeight()
     }
 
     override fun onActivityCreated(p0: Activity, p1: Bundle?) {

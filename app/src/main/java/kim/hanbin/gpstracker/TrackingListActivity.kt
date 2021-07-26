@@ -37,9 +37,9 @@ class TrackingListActivity : AppCompatActivity() {
                 ).putExtra("trackingNum", trackingNumList[i].trackingNum)
             )
         }
-        binding.trackingList.setOnItemLongClickListener { adapterView, view, i, l ->
-            val item = trackingNumList[i]
-            val actions = arrayOf<CharSequence>("삭제", "이름변경")
+        binding.trackingList.setOnItemLongClickListener { adapterView, view, position, l ->
+            val item = trackingNumList[position]
+            val actions = arrayOf<CharSequence>("삭제", "이름변경", "여행 공유")
 
             val builder: AlertDialog.Builder = AlertDialog.Builder(this, R.style.MyDialogTheme)
 
@@ -47,37 +47,66 @@ class TrackingListActivity : AppCompatActivity() {
             builder.setItems(
                 actions
             ) { dialog, i ->
-                if (i == 0) {
-                    val dialog2 = AlertDialog.Builder(this, R.style.MyDialogTheme)
-                        .setMessage("정말로 '${item.name}'을(를) 삭제하시겠습니까?\n삭제후 복구는 불가능합니다.")
-                        .setPositiveButton("예") { dialogInterface: DialogInterface, i: Int ->
-                            CoroutineScope(Dispatchers.IO).launch {
-                                db.deleteLogs(item.trackingNum)
-                                refreshList()
+                when (i) {
+                    0 -> {
+                        val dialog2 = AlertDialog.Builder(this, R.style.MyDialogTheme)
+                            .setMessage("정말로 '${item.name}'을(를) 삭제하시겠습니까?\n삭제후 복구는 불가능합니다.")
+                            .setPositiveButton("예") { dialogInterface: DialogInterface, i: Int ->
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    db.deleteLogs(item.trackingNum)
+                                    refreshList()
+                                }
                             }
+                            .setNegativeButton("아니요") { dialogInterface: DialogInterface, i: Int -> }
+                            .create()
+                        dialog2.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                        dialog2.show()
+                    }
+                    1 -> {
+                        val dialog = TrackingNameDialog(this)
+                        dialog.setTitle("여행기록저장")
+                            .setMsg("변경할 여행기록 이름을 입력해주세요.")
+                            .setCancelable(true)
+                            .setDefaultName(item.name, true)
+                            .setOkListener {
+                                var name = dialog.name.text.toString()
+                                if (name.isEmpty()) {
+                                    name = item.name
+                                }
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    db.updateTrckingData(name, item.id)
+                                    refreshList()
+                                }
+
+
+                            }.show()
+                    }
+                    2 -> {
+                        var datas: List<EventData> = arrayListOf()
+                        CoroutineScope(Dispatchers.IO).launch {
+
+                            datas = db.getTrackingLog(trackingNumList[position].trackingNum)
                         }
-                        .setNegativeButton("아니요") { dialogInterface: DialogInterface, i: Int -> }
-                        .create()
-                    dialog2.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-                    dialog2.show()
-                } else {
-                    val dialog = TrackingNameDialog(this)
-                    dialog.setTitle("여행기록저장")
-                        .setMsg("변경할 여행기록 이름을 입력해주세요.")
-                        .setCancelable(true)
-                        .setDefaultName(item.name, true)
-                        .setOkListener {
-                            var name = dialog.name.text.toString()
-                            if (name.isEmpty()) {
-                                name = item.name
+                        val dialog2 = AlertDialog.Builder(this, R.style.MyDialogTheme)
+                            .setMessage("'${item.name}'을(를) 다른사람들에게 공유하시겠습니까?")
+                            .setPositiveButton("예") { dialogInterface: DialogInterface, i: Int ->
+                                val dialog3 = ShareSelectDialog(this, datas)
+                                dialog3.setOkListener {
+                                    val dialog4 = ShareProgressDialog(
+                                        this,
+                                        datas,
+                                        dialog3.shareSlectrion,
+                                        dialog3.qualitySelection,
+                                        dialog3.pswd
+                                    )
+                                }
+                                dialog3.show()
                             }
-                            CoroutineScope(Dispatchers.IO).launch {
-                                db.updateTrckingData(name, item.id)
-                                refreshList()
-                            }
-
-
-                        }.show()
+                            .setNegativeButton("아니요") { dialogInterface: DialogInterface, i: Int -> }
+                            .create()
+                        dialog2.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+                        dialog2.show()
+                    }
                 }
             }
 
