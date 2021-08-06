@@ -147,8 +147,8 @@ class ShareSelectDialog(private val context: Context, val datas: List<EventData>
         if (num == 2) {
             password_form.visibility = View.VISIBLE
         } else {
-            password.setText( "")
-            password_check.setText( "")
+            password.setText("")
+            password_check.setText("")
             password_form.visibility = View.GONE
         }
     }

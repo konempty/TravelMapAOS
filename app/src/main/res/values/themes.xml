@@ -11,4 +11,13 @@
         <item name="android:textColorPrimary">@color/white</item>
         <item name="textColorAlertDialogListItem">@color/white</item>
     </style>
+
+    <style name="AppPopupTheme" parent="Theme.GPSTracker">
+
+
+        <item name="android:windowBackground">@android:color/transparent</item>
+
+        <item name="android:windowIsTranslucent">true</item>
+
+    </style>
 </resources>

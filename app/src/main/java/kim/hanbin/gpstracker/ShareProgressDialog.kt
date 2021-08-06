@@ -21,7 +21,11 @@ import id.zelory.compressor.constraint.Constraint
 import id.zelory.compressor.constraint.FormatConstraint
 import id.zelory.compressor.constraint.QualityConstraint
 import id.zelory.compressor.constraint.ResolutionConstraint
+import kim.hanbin.gpstracker.RetrofitFactory.Companion.retrofit
 import kotlinx.coroutines.*
+import okhttp3.MediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import org.joda.time.format.DateTimeFormat
 import org.json.JSONObject
 import java.io.*
@@ -33,11 +37,13 @@ import javax.crypto.Cipher
 import javax.crypto.CipherOutputStream
 import javax.crypto.SecretKey
 import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.PBEKeySpec
 
 
 class ShareProgressDialog(
     context: Context,
+    name:String,
     datas: List<EventData>,
     share: Int,
     compress: Int,
@@ -121,7 +127,7 @@ class ShareProgressDialog(
                             } catch (ce: CancellationException) {
                                 // You can ignore or log this exception
                                 return@launch
-                            }catch (e: Exception) {
+                            } catch (e: Exception) {
                                 e.printStackTrace()
                             }
                         }
@@ -146,16 +152,17 @@ class ShareProgressDialog(
                 out.write("]")
                 out.flush()
                 out.close()
+                val salt = ByteArray(32)
                 if (share == 2) {
                     val sr = SecureRandom()
-                    val salt = ByteArray(32)
                     sr.nextBytes(salt)
+                    val iv = "9362469649674046"
 
                     val spec = PBEKeySpec(pswd!!.toCharArray(), salt, 1000, 32 * 8)
                     val key: SecretKey =
-                        SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1").generateSecret(spec)
+                        SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec)
                     val aes: Cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-                    aes.init(Cipher.ENCRYPT_MODE, key)
+                    aes.init(Cipher.ENCRYPT_MODE, key, IvParameterSpec(iv.toByteArray()))
 
                     val fis = FileInputStream(outputFile)
                     outputFile = File.createTempFile(
@@ -186,10 +193,30 @@ class ShareProgressDialog(
                     cos.close()
                     fis.close()
                 }
-                copyFileToDownloads(context, outputFile, filename, outputFile.length(), share == 2)
-                dismiss()
+                //copyFileToDownloads(context, outputFile, filename, outputFile.length(), share == 2)
 
                 //보내는 코드
+
+                val mapRequestBody = LinkedHashMap<String, RequestBody>()
+                val arrBody: ArrayList<MultipartBody.Part> = arrayListOf()
+                val requestBody =
+                    RequestBody.create(MediaType.parse("multipart/form-data"), outputFile)
+                mapRequestBody["share"] =
+                    RequestBody.create(MediaType.parse("text/plain"), share.toString())
+                if (share == 2)
+                    mapRequestBody["salt"] = RequestBody.create(
+                        MediaType.parse("text/plain"),
+                        Base64.encodeToString(salt, Base64.NO_WRAP)
+                    )
+                mapRequestBody["trackingName"] = RequestBody.create(
+                    MediaType.parse("text/plain"),name)
+
+
+                val body = MultipartBody.Part.createFormData("file", outputFile.name, requestBody);
+                arrBody.add(body);
+                retrofit.upload(mapRequestBody, arrBody)
+                dismiss()
+
             } catch (ce: CancellationException) {
                 // You can ignore or log this exception
                 return@launch

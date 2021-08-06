@@ -9,6 +9,8 @@
 /.idea/assetWizardSettings.xml
 .DS_Store
 /build
+/app/src/main/res/raw/travelmap.crt
+/app/google-services.json
 /captures
 .externalNativeBuild
 .cxx

@@ -5,11 +5,14 @@ import android.content.Context
 import android.content.DialogInterface
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 
 class TrackingNameDialog(private val context: Context) {
     var cancelable = false
@@ -38,6 +41,23 @@ class TrackingNameDialog(private val context: Context) {
             dismiss()
             okClickListener?.onClick(it)
         }
+        name.addTextChangedListener(object : TextWatcher {
+
+
+            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+            }
+
+            override fun onTextChanged(charSequence: CharSequence?, p1: Int, p2: Int, p3: Int) {
+                if (charSequence!!.length > 25) {
+                    Toast.makeText(context,"25자이상 입력이 불가능 합니다.",Toast.LENGTH_SHORT).show()
+                    name.setText(name.text.toString().substring(0, 25));
+                    name.setSelection(name.length());
+                }
+            }
+
+            override fun afterTextChanged(p0: Editable?) {
+            }
+        });
         dialog?.setOnCancelListener(cancelListener)
         dialog?.show()
     }

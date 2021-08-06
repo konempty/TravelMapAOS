@@ -169,11 +169,11 @@
                     android:background="@drawable/round_et"
                     android:hint="비밀번호를 입력해주세요."
                     android:inputType="textPassword"
-                    android:textSize="14sp"
                     android:lines="1"
                     android:padding="8dp"
                     android:textColor="@color/white"
-                    android:textColorHint="@color/white" />
+                    android:textColorHint="@color/white"
+                    android:textSize="14sp" />
             </LinearLayout>
 
             <LinearLayout
@@ -199,12 +199,12 @@
                     android:layout_weight="1"
                     android:background="@drawable/round_et"
                     android:hint="비밀번호를 다시 한번 입력해주세요."
-                    android:textSize="14sp"
                     android:inputType="textPassword"
                     android:lines="1"
                     android:padding="8dp"
                     android:textColor="@color/white"
-                    android:textColorHint="@color/white" />
+                    android:textColorHint="@color/white"
+                    android:textSize="14sp" />
             </LinearLayout>
         </LinearLayout>
 

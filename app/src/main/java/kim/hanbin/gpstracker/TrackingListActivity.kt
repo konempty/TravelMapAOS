@@ -5,15 +5,28 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
+import com.google.gson.JsonObject
+import kim.hanbin.gpstracker.RetrofitFactory.Companion.retrofit
 import kim.hanbin.gpstracker.databinding.ActivityTrackingListBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -24,6 +37,20 @@ class TrackingListActivity : AppCompatActivity() {
     private val binding get() = mBinding!!
     lateinit var trackingNumList: List<TrackingListData>
     val db by lazy { InnerDB.getInstance(this) }
+    val loginResult = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            loginAndSendData()
+        } else {
+            Toast.makeText(this, "여행기록을 공유하기위해선 로그인이 필요합니다.", Toast.LENGTH_SHORT).show()
+        }
+
+    }
+    lateinit var dialog3: ShareSelectDialog
+
+    val mAuth: FirebaseAuth by lazy { Firebase.auth }
+    private lateinit var popup: ProgressPopup
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mBinding = ActivityTrackingListBinding.inflate(layoutInflater)
@@ -90,17 +117,23 @@ class TrackingListActivity : AppCompatActivity() {
                         val dialog2 = AlertDialog.Builder(this, R.style.MyDialogTheme)
                             .setMessage("'${item.name}'을(를) 다른사람들에게 공유하시겠습니까?")
                             .setPositiveButton("예") { dialogInterface: DialogInterface, i: Int ->
-                                val dialog3 = ShareSelectDialog(this, datas)
+
+                                dialog3 = ShareSelectDialog(this, datas)
                                 dialog3.setOkListener {
-                                    val dialog4 = ShareProgressDialog(
+                                    ShareProgressDialog(
                                         this,
+                                        trackingNumList[position].name,
                                         datas,
                                         dialog3.shareSlectrion,
                                         dialog3.qualitySelection,
                                         dialog3.pswd
                                     )
                                 }
-                                dialog3.show()
+
+                                if (mAuth.currentUser == null) {
+                                    loginResult.launch(Intent(this, LoginActivity::class.java))
+                                } else
+                                    loginAndSendData()
                             }
                             .setNegativeButton("아니요") { dialogInterface: DialogInterface, i: Int -> }
                             .create()
@@ -117,6 +150,94 @@ class TrackingListActivity : AppCompatActivity() {
             true
         }
         binding.back.setOnClickListener { finish() }
+    }
+
+    fun loginAndSendData() {
+        showProgress()
+        mAuth.currentUser!!.getIdToken(true)
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    val token = it.result.token!!
+                    val res: Call<JsonObject> =
+                       retrofit
+                            .login(token)
+
+                    res.enqueue(object : Callback<JsonObject?> {
+                        override fun onResponse(
+                            call: Call<JsonObject?>?,
+                            response: Response<JsonObject?>
+                        ) {
+                            hideProgress()
+                            val json = response.body()!!
+
+                            if (json.get("success").asBoolean) {
+                                val nickname = json.get("result").asString
+                                Toast.makeText(
+                                    this@TrackingListActivity,
+                                    "${nickname}님 환영합니다!",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                dialog3.show()
+                            } else {
+
+                                when (json.get("result").asString) {
+                                    "noUID" -> {
+
+                                        Toast.makeText(this@TrackingListActivity, "닉네임을 설정해주세요!", Toast.LENGTH_SHORT).show()
+                                        val dialog = NicknameDialog(this@TrackingListActivity)
+                                        dialog.setOkListener {
+                                            val res2: Call<JsonObject> =
+                                                retrofit
+                                                    .register(token, dialog.nickname)
+                                            res2.enqueue(object : Callback<JsonObject>{
+                                                override fun onResponse(
+                                                    call: Call<JsonObject>,
+                                                    response: Response<JsonObject>
+                                                ) {
+                                                    dialog3.show()
+                                                }
+
+                                                override fun onFailure(
+                                                    call: Call<JsonObject>,
+                                                    t: Throwable
+                                                ) {
+                                                    Toast.makeText(
+                                                        this@TrackingListActivity,
+                                                        "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
+                                                }
+                                            })
+                                        }.show()
+                                    }
+                                    "invalidUser" -> Toast.makeText(
+                                        this@TrackingListActivity,
+                                        "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+
+                                }
+                            }
+
+                        }
+
+                        override fun onFailure(call: Call<JsonObject?>?, t: Throwable?) {
+                            hideProgress()
+                            Toast.makeText(
+                                this@TrackingListActivity,
+                                "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
+                                Toast.LENGTH_LONG
+                            ).show()
+
+                        }
+                    })
+
+                } else {
+                    hideProgress()
+                    Toast.makeText(this, "문제가 발생했습니다. 잠시후 다시 시도해주세요.", Toast.LENGTH_SHORT).show()
+                }
+            }
+
     }
 
     fun refreshList() {
@@ -139,4 +260,31 @@ class TrackingListActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun showProgress() {
+        popup = ProgressPopup(this)
+        try {
+            popup.show()
+        } catch (e: IllegalArgumentException) {
+            Log.e(this.javaClass.simpleName, "showProgress IllegalArgumentException")
+        } catch (e: RuntimeException) {
+            Log.e(this.javaClass.simpleName, "showProgress RuntimeException")
+        } catch (e: Exception) {
+            Log.e(this.javaClass.simpleName, "showProgress Exception")
+        }
+    }
+
+
+    private fun hideProgress() {
+        try {
+            popup.dismiss()
+        } catch (e: IllegalArgumentException) {
+            Log.e(this.javaClass.simpleName, "hideProgress IllegalArgumentException")
+        } catch (e: RuntimeException) {
+            Log.e(this.javaClass.simpleName, "hideProgress RuntimeException")
+        } catch (e: Exception) {
+            Log.e(this.javaClass.simpleName, "hideProgress Exception")
+        }
+    }
+
 }
