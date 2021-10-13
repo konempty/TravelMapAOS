@@ -19,13 +19,13 @@ class SelfSigningHelper private constructor() {
     private var tmf: TrustManagerFactory? = null
 
 
+    companion object {
 
-    companion object{
-
-        private val SingleInstance :SelfSigningHelper by lazy { SelfSigningHelper() }
-    fun getInstance(): SelfSigningHelper {
-        return SingleInstance
-    }}
+        private val SingleInstance: SelfSigningHelper by lazy { SelfSigningHelper() }
+        fun getInstance(): SelfSigningHelper {
+            return SingleInstance
+        }
+    }
 
 
     fun setUp() {

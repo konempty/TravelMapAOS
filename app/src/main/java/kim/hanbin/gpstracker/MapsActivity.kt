@@ -221,6 +221,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 mMap.stopAnimation()
             }
         }
+
+        /*
+        그것도 되고 다른 방법은 until도 자주 써
+
+         0..n은 0부터 n까지 라는 의미 인데
+         0 until n 은 0부터 n-1까지 라는 의미야
+
+         for(i=0;i<10;i++) -> for(i in 0 until 10)
+         이런식
+         */
         val uiSetting = mMap.uiSettings
         uiSetting.isTiltGesturesEnabled = false
         uiSetting.isRotateGesturesEnabled = false
@@ -528,6 +538,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     fun getStartPoint() {
+        zoomlevel = 0
         nextIdx = 0
         isDiscrete = false
 

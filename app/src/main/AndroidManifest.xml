@@ -67,6 +67,30 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".SchemeActivity"
+            android:launchMode="singleTask">
+            <!--intent-filter>
+                 <- 외부 앱에서 Intent.ACTION_SEND + text/plain 혹은 image 인텐트 사용시, 현재 앱이 검색 결과에 나타나도록 세팅 ->
+                 <action android:name="android.intent.action.SEND" />
+                 <category android:name="android.intent.category.DEFAULT" />
+
+                 <data android:mimeType="text/plain" />
+                 <data android:mimeType="image/*" />
+             </intent-filter-->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- 스키마처리 : 웹에서 abc://def(scheme://host)이란 스키마 호출, 카카오 스키마 값으로 카카오 링크 공유하기 호출 시 이 액티비티가 호출 -->
+                <data
+                    android:host="travelmap"
+                    android:scheme="scheme" />
+
+            </intent-filter>
+        </activity>
+
 
         <receiver android:name=".AlarmReceiver" />
         <receiver
@@ -83,3 +107,4 @@
     </application>
 
 </manifest>
+

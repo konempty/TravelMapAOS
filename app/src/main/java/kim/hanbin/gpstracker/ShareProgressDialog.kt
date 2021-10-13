@@ -12,10 +12,13 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Base64
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.Toast
 import androidx.core.content.FileProvider
+import com.google.gson.JsonObject
 import id.zelory.compressor.Compressor
 import id.zelory.compressor.constraint.Constraint
 import id.zelory.compressor.constraint.FormatConstraint
@@ -23,11 +26,16 @@ import id.zelory.compressor.constraint.QualityConstraint
 import id.zelory.compressor.constraint.ResolutionConstraint
 import kim.hanbin.gpstracker.RetrofitFactory.Companion.retrofit
 import kotlinx.coroutines.*
-import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.joda.time.format.DateTimeFormat
 import org.json.JSONObject
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.io.*
 import java.nio.charset.Charset
 import java.security.SecureRandom
@@ -43,7 +51,7 @@ import javax.crypto.spec.PBEKeySpec
 
 class ShareProgressDialog(
     context: Context,
-    name:String,
+    name: String,
     datas: List<EventData>,
     share: Int,
     compress: Int,
@@ -70,7 +78,7 @@ class ShareProgressDialog(
     val count = AtomicInteger(0)
 
     init {
-        val dtf = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
+        val dtf = DateTimeFormat.forPattern("yyyy-MM-dd HH-mm-ss")
         val filename =
             "compressedFile" + dtf.print(Date().time)
         val outputDir: File = context.cacheDir // context being the Activity pointer
@@ -86,50 +94,53 @@ class ShareProgressDialog(
         )
         out.write("[")
         show()
-        val total = datas.size.toFloat()
+        var total = datas.size.toFloat()
         TMCompress.compress = compress
         var isComma = false
 
         job = CoroutineScope(Dispatchers.IO).launch {
             try {
                 for (data in datas) {
-                    if (data.eventNum!! in 1..2)
+                    if (data.eventNum!! in 1..2) {
+                        total--
                         continue
+                    }
                     val obj = JSONObject()
                     obj.put("eventNum", data.eventNum)
                     obj.put("time", dtf.print(data.time!!.time))
+
                     when (data.eventNum) {
-                        3 -> {
+                        3,5 -> {
                             obj.put("lat", data.lat)
                             obj.put("lng", data.lng)
+                            if(data.eventNum == 5){
+                                val file = FileUtil.from(context, data.uri)
+                                val fis = FileInputStream(file)
+                                val bmp = BitmapFactory.decodeStream(fis)
+                                fis.close()
+                                try {
+
+                                    val compressedImageFile =
+                                        Compressor.compress(context, file) {
+                                            constraint(TMCompress(bmp))
+                                        }
+                                    val fis2 = FileInputStream(compressedImageFile)
+
+
+                                    val bytes = fis2.readBytes()
+                                    fis2.close()
+                                    val encodedStr = Base64.encodeToString(bytes, Base64.NO_WRAP)
+                                    obj.put("data", encodedStr)
+                                } catch (ce: CancellationException) {
+                                    // You can ignore or log this exception
+                                    return@launch
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            }
                         }
                         4 -> {
                             obj.put("trackingSpeed", data.trackingSpeed)
-                        }
-                        5 -> {
-                            val file = FileUtil.from(context, data.uri)
-                            val fis = FileInputStream(file)
-                            val bmp = BitmapFactory.decodeStream(fis)
-                            fis.close()
-                            try {
-
-                                val compressedImageFile =
-                                    Compressor.compress(context, file) {
-                                        constraint(TMCompress(bmp))
-                                    }
-                                val fis2 = FileInputStream(compressedImageFile)
-
-
-                                val bytes = fis2.readBytes()
-                                fis2.close()
-                                val encodedStr = Base64.encodeToString(bytes, Base64.NO_WRAP)
-                                obj.put("data", encodedStr)
-                            } catch (ce: CancellationException) {
-                                // You can ignore or log this exception
-                                return@launch
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
                         }
                     }
                     val tmpCount = count.incrementAndGet()
@@ -200,21 +211,57 @@ class ShareProgressDialog(
                 val mapRequestBody = LinkedHashMap<String, RequestBody>()
                 val arrBody: ArrayList<MultipartBody.Part> = arrayListOf()
                 val requestBody =
-                    RequestBody.create(MediaType.parse("multipart/form-data"), outputFile)
+                    outputFile.asRequestBody("multipart/form-data".toMediaTypeOrNull())
                 mapRequestBody["share"] =
-                    RequestBody.create(MediaType.parse("text/plain"), share.toString())
+                    share.toString().toRequestBody("text/plain".toMediaTypeOrNull())
                 if (share == 2)
-                    mapRequestBody["salt"] = RequestBody.create(
-                        MediaType.parse("text/plain"),
-                        Base64.encodeToString(salt, Base64.NO_WRAP)
-                    )
-                mapRequestBody["trackingName"] = RequestBody.create(
-                    MediaType.parse("text/plain"),name)
+                    mapRequestBody["salt"] = Base64.encodeToString(salt, Base64.NO_WRAP)
+                        .toRequestBody("text/plain".toMediaTypeOrNull())
+                mapRequestBody["trackingName"] =
+                    name.toRequestBody("text/plain".toMediaTypeOrNull())
+                val countingRequestBody =
+                    CountingRequestBody(requestBody, object : CountingRequestBody.Listener {
+                        override fun onRequestProgress(bytesWitten: Long, contentLength: Long) {
+                            Log.d(
+                                this.javaClass.simpleName,
+                                "bytesWitten : $bytesWitten contentLength : $contentLength"
+                            )
+                        }
+                    })
 
-
-                val body = MultipartBody.Part.createFormData("file", outputFile.name, requestBody);
+                val body =
+                    MultipartBody.Part.createFormData("file", outputFile.name, countingRequestBody);
                 arrBody.add(body);
-                retrofit.upload(mapRequestBody, arrBody)
+                val res = retrofit.upload(mapRequestBody, arrBody)
+                res.enqueue(object : Callback<JsonObject> {
+                    override fun onResponse(
+                        call: Call<JsonObject>?,
+                        response: Response<JsonObject>
+                    ) {
+                        val json = response.body()!!
+                        if (json.get("success").asBoolean) {
+
+                            println(json.get("result").asInt)
+                        } else {
+                            println(json.get("result").asString)
+                            Toast.makeText(
+                                context,
+                                "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+
+                    override fun onFailure(call: Call<JsonObject>?, t: Throwable?) {
+                        Toast.makeText(
+                            context,
+                            "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
+                            Toast.LENGTH_LONG
+                        ).show()
+
+                    }
+                })
+
                 dismiss()
 
             } catch (ce: CancellationException) {
@@ -237,8 +284,6 @@ class ShareProgressDialog(
         encrypted: Boolean
     ): Uri? {
         val resolver = context.contentResolver
-        val DOWNLOAD_DIR =
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val contentValues = ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
@@ -250,6 +295,8 @@ class ShareProgressDialog(
             }
             resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
         } else {
+            val DOWNLOAD_DIR =
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             val authority = "${context.packageName}.provider"
             val destinyFile = File(DOWNLOAD_DIR, fileName)
             FileProvider.getUriForFile(context, authority, destinyFile)

@@ -7,17 +7,17 @@ import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.http.*
 
-interface RetroServce {
+interface RetroService {
     @GET("registerUser.do")
     fun register(
         @Query("token") token: String,
         @Query("nickname") nickname: String
     ): Call<JsonObject>
 
-    @GET("checkNickname.do")
+    @POST("checkNickname.do")
     fun checkNickname(@Query("nickname") nickname: String): Call<String>
 
-    @POST("login.do")
+    @POST("loginProcess.do")
     fun login(@Query("token") token: String): Call<JsonObject>
 
     @GET("delete_user.do")
@@ -25,9 +25,9 @@ interface RetroServce {
     ): Call<JsonObject>
 
     @Multipart
-    @GET("upload.do")
+    @POST("upload.do")
     fun upload(
-        @PartMap map: Map<String, RequestBody>,
+        @PartMap map: HashMap<String, RequestBody>,
         @Part files: ArrayList<MultipartBody.Part>
     ): Call<JsonObject>
 
@@ -35,5 +35,6 @@ interface RetroServce {
     fun deleteFile(): Call<JsonObject>
 
     @GET("fileDownload.do")
+    @Streaming
     fun fileDownload(@Query("trackingNum") trackingNum: Int): Call<ResponseBody>
 }

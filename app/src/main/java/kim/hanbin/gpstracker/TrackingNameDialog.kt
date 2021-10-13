@@ -49,7 +49,7 @@ class TrackingNameDialog(private val context: Context) {
 
             override fun onTextChanged(charSequence: CharSequence?, p1: Int, p2: Int, p3: Int) {
                 if (charSequence!!.length > 25) {
-                    Toast.makeText(context,"25자이상 입력이 불가능 합니다.",Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "25자이상 입력이 불가능 합니다.", Toast.LENGTH_SHORT).show()
                     name.setText(name.text.toString().substring(0, 25));
                     name.setSelection(name.length());
                 }

@@ -15,8 +15,6 @@ import kim.hanbin.gpstracker.RetrofitFactory.Companion.retrofit
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 
 class NicknameDialog(private val context: Context) {
     private val builder: AlertDialog.Builder by lazy {
@@ -25,9 +23,6 @@ class NicknameDialog(private val context: Context) {
 
     private val view: View by lazy {
         View.inflate(context, R.layout.dialog_nickname, null)
-    }
-    val name: EditText by lazy {
-        view.findViewById(R.id.name)
     }
 
     private var dialog: AlertDialog? = null
@@ -41,7 +36,6 @@ class NicknameDialog(private val context: Context) {
     var nickname = ""
 
     private lateinit var popup: ProgressPopup
-    private val SERVER_API_URL = "https://124.54.119.156/"
 
 
     fun show() {
@@ -56,7 +50,7 @@ class NicknameDialog(private val context: Context) {
 
             override fun onTextChanged(charSequence: CharSequence?, p1: Int, p2: Int, p3: Int) {
                 if (charSequence!!.length > 10) {
-                    Toast.makeText(context,"10자이상 입력이 불가능 합니다.",Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "10자이상 입력이 불가능 합니다.", Toast.LENGTH_SHORT).show()
                     nicknameET.setText(nicknameET.text.toString().substring(0, 10));
                     nicknameET.setSelection(nicknameET.length());
                 }
@@ -81,11 +75,7 @@ class NicknameDialog(private val context: Context) {
                     val result = response.body()!!
                     if (result == "available") {
 
-                        Toast.makeText(
-                            context,
-                            "${nickname}님 환영합니다!",
-                            Toast.LENGTH_LONG
-                        ).show()
+
                         dismiss()
                         okClickListener.onClick(it)
                     } else {

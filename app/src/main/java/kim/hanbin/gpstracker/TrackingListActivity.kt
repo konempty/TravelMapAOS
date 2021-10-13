@@ -25,8 +25,7 @@ import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -159,7 +158,7 @@ class TrackingListActivity : AppCompatActivity() {
                 if (it.isSuccessful) {
                     val token = it.result.token!!
                     val res: Call<JsonObject> =
-                       retrofit
+                        retrofit
                             .login(token)
 
                     res.enqueue(object : Callback<JsonObject?> {
@@ -177,19 +176,24 @@ class TrackingListActivity : AppCompatActivity() {
                                     "${nickname}님 환영합니다!",
                                     Toast.LENGTH_LONG
                                 ).show()
+
                                 dialog3.show()
                             } else {
 
                                 when (json.get("result").asString) {
                                     "noUID" -> {
 
-                                        Toast.makeText(this@TrackingListActivity, "닉네임을 설정해주세요!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(
+                                            this@TrackingListActivity,
+                                            "닉네임을 설정해주세요!",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                         val dialog = NicknameDialog(this@TrackingListActivity)
                                         dialog.setOkListener {
                                             val res2: Call<JsonObject> =
                                                 retrofit
                                                     .register(token, dialog.nickname)
-                                            res2.enqueue(object : Callback<JsonObject>{
+                                            res2.enqueue(object : Callback<JsonObject> {
                                                 override fun onResponse(
                                                     call: Call<JsonObject>,
                                                     response: Response<JsonObject>
