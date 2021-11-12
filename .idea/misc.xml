@@ -8,21 +8,29 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/drawable/count_round.xml" value="0.378125" />
         <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/drawable/round_frame.xml" value="0.22135416666666666" />
+        <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/activity_friend.xml" value="0.5390625" />
         <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/activity_login.xml" value="0.21875" />
         <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/activity_main.xml" value="0.25769927536231885" />
         <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/activity_maps.xml" value="0.20520833333333333" />
         <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/activity_photo.xml" value="0.25769927536231885" />
         <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/activity_photo_list.xml" value="0.25317028985507245" />
+        <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/activity_scheme.xml" value="0.3567708333333333" />
         <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/activity_splash.xml" value="0.25317028985507245" />
         <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/activity_tracking_list.xml" value="0.25317028985507245" />
+        <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/album_item.xml" value="0.2644927536231884" />
+        <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/dialog_add_friend.xml" value="0.3567708333333333" />
+        <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/dialog_file_download.xml" value="0.3390625" />
         <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/dialog_nickname.xml" value="0.33" />
         <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/dialog_password.xml" value="0.22291666666666668" />
-        <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/dialog_share_select.xml" value="0.10740740740740741" />
+        <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/dialog_share_progress.xml" value="0.2554347826086957" />
+        <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/dialog_share_select.xml" value="0.25" />
         <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/dialog_tracking_name.xml" value="0.2418478260869565" />
         <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/fragment_album.xml" value="0.25769927536231885" />
         <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/fragment_photo_list.xml" value="0.25769927536231885" />
         <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/fragment_tracking_menu.xml" value="0.25317028985507245" />
+        <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/friend_item.xml" value="0.5536458333333333" />
         <entry key="..\:/Users/1117p/Desktop/GPSTracker/app/src/main/res/layout/popup_progress.xml" value="0.2078804347826087" />
       </map>
     </option>

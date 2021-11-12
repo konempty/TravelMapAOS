@@ -59,7 +59,6 @@ class PhotoActivity : AppCompatActivity() {
                 when (p2) {
                     0 -> {
                         if (isMenuClicked) {
-                            val dialog =
                                 AlertDialog.Builder(this@PhotoActivity, R.style.MyDialogTheme)
                                     .setTitle("이 항목을 지우시겠습니까?")
                                     .setNegativeButton("아니오") { dialogInterface: DialogInterface, i: Int ->
@@ -85,9 +84,7 @@ class PhotoActivity : AppCompatActivity() {
                                         }
                                     }
                                     .setMessage("삭제한뒤 복구는 불가능 합니다. 정말로 이 항목을 지우시겠습니까?")
-                                    .create()
-                            dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-                            dialog.show()
+                                    .create().show()
 
                         }
                     }

@@ -47,7 +47,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:lineSpacingExtra="6sp"
-            android:text="전체    : 모든 사람들이 볼수 있습니다."
+            android:text="전체    : 모든 사람들이 볼 수 있습니다."
             android:textColor="#ff0"
             android:textSize="14sp"
             android:textStyle="normal"
@@ -60,7 +60,7 @@
             android:id="@+id/msg3"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="친구만 : 친구신청이 되어있는 사람만 볼수있습니다."
+            android:text="친구만 : 친구신청이 되어있는 사람만 볼 수 있습니다."
             android:textColor="#0f0"
             android:textSize="14sp"
             android:textStyle="normal"
@@ -74,7 +74,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:lineSpacingExtra="6sp"
-            android:text="암호화 : 비밀번호를 입력해야 볼수있습니다."
+            android:text="암호화 : 비밀번호를 입력해야 볼 수 있습니다."
             android:textColor="#f00"
             android:textSize="14sp"
             android:textStyle="normal"
@@ -264,7 +264,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:background="@color/dark"
-                    android:text="저화질"
+                    android:text="일반화질"
                     android:textSize="16sp" />
             </LinearLayout>
 

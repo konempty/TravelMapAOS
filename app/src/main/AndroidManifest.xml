@@ -25,11 +25,18 @@
         android:screenOrientation="portrait"
         android:supportsRtl="true"
         android:theme="@style/Theme.GPSTracker">
-        <activity android:name=".LoginActivity" />
+        <activity
+            android:name=".FriendActivity"
+            android:exported="false" />
+        <activity
+            android:name=".LoginActivity"
+            android:theme="@style/dialogTheme" />
         <activity android:name=".PhotoActivity" />
         <activity android:name=".PhotoListActivity" />
         <activity android:name=".TrackingListActivity" />
-        <activity android:name=".SplashActivity">
+        <activity
+            android:name=".SplashActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -47,6 +54,7 @@
         <activity
             android:name=".MapsActivity"
             android:label="@string/title_activity_maps" />
+
         <meta-data
             android:name="com.facebook.sdk.ApplicationId"
             android:value="@string/facebook_app_id" />
@@ -58,7 +66,8 @@
         <activity
             android:name="com.facebook.CustomTabActivity"
             android:exported="true">
-            <intent-filter><action android:name="android.intent.action.VIEW" />
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
@@ -66,18 +75,21 @@
                 <data android:scheme="@string/fb_login_protocol_scheme" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".SchemeActivity"
+            android:exported="true"
             android:launchMode="singleTask">
-            <!--intent-filter>
+
+            <!--
+             intent-filter>
                  <- 외부 앱에서 Intent.ACTION_SEND + text/plain 혹은 image 인텐트 사용시, 현재 앱이 검색 결과에 나타나도록 세팅 ->
                  <action android:name="android.intent.action.SEND" />
                  <category android:name="android.intent.category.DEFAULT" />
 
                  <data android:mimeType="text/plain" />
                  <data android:mimeType="image/*" />
-             </intent-filter-->
+             </intent-filter
+            -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
@@ -87,10 +99,8 @@
                 <data
                     android:host="travelmap"
                     android:scheme="scheme" />
-
             </intent-filter>
         </activity>
-
 
         <receiver android:name=".AlarmReceiver" />
         <receiver
@@ -107,4 +117,3 @@
     </application>
 
 </manifest>
-

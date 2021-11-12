@@ -4,8 +4,10 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Base64
 import android.util.Log
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
@@ -13,11 +15,11 @@ import com.google.firebase.ktx.Firebase
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import com.google.gson.stream.JsonReader
-import kim.hanbin.gpstracker.RetrofitFactory.Companion.retrofit
+import kim.hanbin.gpstracker.databinding.ActivitySchemeBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import okhttp3.ResponseBody
+import okhttp3.*
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -29,6 +31,8 @@ import javax.crypto.spec.PBEKeySpec
 
 
 class SchemeActivity : AppCompatActivity() {
+    private var mBinding: ActivitySchemeBinding? = null
+    private val binding get() = mBinding!!
 
     val loginResult = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -43,10 +47,23 @@ class SchemeActivity : AppCompatActivity() {
 
     val mAuth: FirebaseAuth by lazy { Firebase.auth }
 
-    val id: Int by lazy { intent.getStringExtra("id")!!.toInt() }
+    val id: Long by lazy { intent.getStringExtra("id")!!.toLong() }
+    val userId: Long by lazy { intent.getStringExtra("userID")!!.toLong() }
+    val nickname: String by lazy { intent.getStringExtra("nickname")!!.toString() }
+    val shareNum: Int by lazy { intent.getStringExtra("shareNum")!!.toInt() }
     val salt: ByteArray? by lazy {
         val saltStr = intent.getStringExtra("salt")
         saltStr?.let { Base64.decode(saltStr, Base64.NO_WRAP) }
+    }
+    val retrofit:RetroService by lazy{
+        RetrofitFactory.getDownloadRetrofit {
+            runOnUiThread {
+                val param = binding.progress.layoutParams as LinearLayout.LayoutParams
+                param.weight = it
+                binding.progress.layoutParams = param
+                binding.percent.text = String.format("%.1f%%",it*100)
+            }
+        }
     }
 
     val filename =
@@ -57,8 +74,9 @@ class SchemeActivity : AppCompatActivity() {
     private lateinit var popup: ProgressPopup
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_scheme)
-        if (id == -1) {
+        mBinding = ActivitySchemeBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        if (id == -1L) {
             Toast.makeText(this, "에러가 발생했습니다. 나중에 다시시도해주세요", Toast.LENGTH_SHORT).show()
             finish()
             return
@@ -67,68 +85,101 @@ class SchemeActivity : AppCompatActivity() {
             loginResult.launch(Intent(this, LoginActivity::class.java))
         } else
             next()
+binding.cancelButton.setOnClickListener {
+    finish()
+}
 
     }
 
+
+
     fun next() {
-        showProgress()
-        mAuth.currentUser!!.getIdToken(true)
-            .addOnCompleteListener {
-                if (it.isSuccessful) {
-                    val token = it.result.token!!
-                    val res: Call<JsonObject> =
-                        retrofit
-                            .login(token)
+        retrofit.loginCheck().enqueue(object : Callback<String> {
+            override fun onResponse(call: Call<String>, response: Response<String>) {
+                if (response.body() == "Logedin") {
+                    if (shareNum == 1)
+                        checkFriend()
+                    else
+                        downloadFile()
+                } else {
+                    showProgress()
+                    mAuth.currentUser!!.getIdToken(true)
+                        .addOnCompleteListener {
+                            if (it.isSuccessful) {
+                                val token = it.result.token!!
+                                val res: Call<JsonObject> =
+                                    retrofit
+                                        .login(token)
 
-                    res.enqueue(object : Callback<JsonObject?> {
-                        override fun onResponse(
-                            call: Call<JsonObject?>?,
-                            response: Response<JsonObject?>
-                        ) {
-                            hideProgress()
-                            val json = response.body()!!
+                                res.enqueue(object : Callback<JsonObject?> {
+                                    override fun onResponse(
+                                        call: Call<JsonObject?>?,
+                                        response: Response<JsonObject?>
+                                    ) {
+                                        hideProgress()
+                                        val json = response.body()!!
 
-                            if (json.get("success").asBoolean) {
-                                val nickname = json.get("result").asString
-                                Toast.makeText(
-                                    this@SchemeActivity,
-                                    "${nickname}님 환영합니다!",
-                                    Toast.LENGTH_LONG
-                                ).show()
+                                        if (json.get("success").asBoolean) {
+                                            val nickname = json.get("result").asString
+                                            Toast.makeText(
+                                                this@SchemeActivity,
+                                                "${nickname}님 환영합니다!",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                            MainActivity.instance?.setNickname(nickname)
+                                            if (shareNum == 1)
+                                                checkFriend()
+                                            else
+                                                downloadFile()
+                                        } else {
 
-                                downloadFile()
-                            } else {
+                                            when (json.get("result").asString) {
+                                                "noUID" -> {
 
-                                when (json.get("result").asString) {
-                                    "noUID" -> {
-
-                                        Toast.makeText(
-                                            this@SchemeActivity,
-                                            "닉네임을 설정해주세요!",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                        val dialog = NicknameDialog(this@SchemeActivity)
-                                        dialog.setOkListener {
-                                            val res2: Call<JsonObject> =
-                                                retrofit
-                                                    .register(token, dialog.nickname)
-                                            res2.enqueue(object : Callback<JsonObject> {
-                                                override fun onResponse(
-                                                    call: Call<JsonObject>,
-                                                    response: Response<JsonObject>
-                                                ) {
                                                     Toast.makeText(
                                                         this@SchemeActivity,
-                                                        "${dialog.nickname}님 환영합니다!",
-                                                        Toast.LENGTH_LONG
+                                                        "닉네임을 설정해주세요!",
+                                                        Toast.LENGTH_SHORT
                                                     ).show()
-                                                    downloadFile()
-                                                }
+                                                    val dialog = NicknameDialog(this@SchemeActivity)
+                                                    dialog.setOkListener {
+                                                        val res2: Call<JsonObject> =
+                                                            retrofit
+                                                                .register(token, dialog.nickname)
+                                                        res2.enqueue(object : Callback<JsonObject> {
+                                                            override fun onResponse(
+                                                                call: Call<JsonObject>,
+                                                                response: Response<JsonObject>
+                                                            ) {
+                                                                Toast.makeText(
+                                                                    this@SchemeActivity,
+                                                                    "${dialog.nickname}님 환영합니다!",
+                                                                    Toast.LENGTH_LONG
+                                                                ).show()
+                                                                MainActivity.instance?.setNickname(
+                                                                    dialog.nickname
+                                                                )
+                                                                if (shareNum == 1)
+                                                                    checkFriend()
+                                                                else
+                                                                    downloadFile()
+                                                            }
 
-                                                override fun onFailure(
-                                                    call: Call<JsonObject>,
-                                                    t: Throwable
-                                                ) {
+                                                            override fun onFailure(
+                                                                call: Call<JsonObject>,
+                                                                t: Throwable
+                                                            ) {
+                                                                Toast.makeText(
+                                                                    this@SchemeActivity,
+                                                                    "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
+                                                                    Toast.LENGTH_LONG
+                                                                ).show()
+                                                                finish()
+                                                            }
+                                                        })
+                                                    }.show()
+                                                }
+                                                "invalidUser" -> {
                                                     Toast.makeText(
                                                         this@SchemeActivity,
                                                         "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
@@ -136,47 +187,140 @@ class SchemeActivity : AppCompatActivity() {
                                                     ).show()
                                                     finish()
                                                 }
-                                            })
-                                        }.show()
+                                            }
+                                        }
+
                                     }
-                                    "invalidUser" -> {
+
+                                    override fun onFailure(
+                                        call: Call<JsonObject?>?,
+                                        t: Throwable?
+                                    ) {
+                                        hideProgress()
                                         Toast.makeText(
                                             this@SchemeActivity,
                                             "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
                                             Toast.LENGTH_LONG
                                         ).show()
                                         finish()
+
                                     }
-                                }
+                                })
+
+                            } else {
+                                hideProgress()
+                                Toast.makeText(
+                                    this@SchemeActivity,
+                                    "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                finish()
                             }
-
                         }
-
-                        override fun onFailure(call: Call<JsonObject?>?, t: Throwable?) {
-                            hideProgress()
-                            Toast.makeText(
-                                this@SchemeActivity,
-                                "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
-                                Toast.LENGTH_LONG
-                            ).show()
-                            finish()
-
-                        }
-                    })
-
-                } else {
-                    hideProgress()
-                    Toast.makeText(this, "문제가 발생했습니다. 잠시후 다시 시도해주세요.", Toast.LENGTH_SHORT).show()
-                    finish()
                 }
             }
+
+            override fun onFailure(call: Call<String>, t: Throwable) {
+                Toast.makeText(
+                    this@SchemeActivity,
+                    "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
+                    Toast.LENGTH_LONG
+                ).show()
+                finish()
+            }
+        })
+
+
+    }
+
+    fun checkFriend() {
+        showProgress()
+        retrofit.checkFriend(id).enqueue(object : Callback<String> {
+            override fun onResponse(call: Call<String>, response: Response<String>) {
+                val result = response.body()!!
+                hideProgress()
+                when (result) {
+                    "true" -> {
+                        downloadFile()
+                    }
+                    "false" -> {
+                        AlertDialog.Builder(this@SchemeActivity, R.style.MyDialogTheme)
+                            .setTitle("친구공개")
+                            .setMessage("해당 여행 기록은 친구에게만 공개되어있습니다. ${nickname}님에게 친구신청 하시겠습니까?")
+                            .setPositiveButton("예") { dialg, i ->
+                                showProgress()
+                                retrofit.addFriendRequest(userId)
+                                    .enqueue(object : Callback<String> {
+                                        override fun onResponse(
+                                            call: Call<String>,
+                                            response: Response<String>
+                                        ) {
+                                            hideProgress()
+                                            val result = response.body()!!
+                                            when (result) {
+                                                "alreadyRequested", "success" -> {
+                                                    Toast.makeText(
+                                                        this@SchemeActivity,
+                                                        "신청되었습니다. 친구신청 수락 되면 다시 시도해주세요.",
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
+                                                    finish()
+                                                }
+                                                else -> {
+
+                                                    Toast.makeText(
+                                                        this@SchemeActivity,
+                                                        "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
+                                                    finish()
+                                                    MainActivity.instance?.logout()
+                                                }
+                                            }
+                                        }
+
+                                        override fun onFailure(call: Call<String>, t: Throwable) {
+                                            Toast.makeText(
+                                                this@SchemeActivity,
+                                                "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+
+                                            hideProgress()
+                                        }
+                                    })
+                            }.setNegativeButton("아니요") { dialg, i ->
+                                finish()
+                            }.create().show()
+
+                    }
+                    else -> {
+                        Toast.makeText(
+                            this@SchemeActivity,
+                            "에러가 발생했습니다. 나중에 다시시도해주세요",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        finish()
+                    }
+                }
+            }
+
+            override fun onFailure(call: Call<String>, t: Throwable) {
+                hideProgress()
+                Toast.makeText(
+                    this@SchemeActivity,
+                    "에러가 발생했습니다. 나중에 다시시도해주세요",
+                    Toast.LENGTH_SHORT
+                ).show()
+                finish()
+            }
+        })
 
     }
 
     private fun downloadFile() {
         val res2: Call<ResponseBody> =
-            retrofit
-                .fileDownload(id)
+            retrofit.fileDownload(id)
 
         res2.enqueue(object : Callback<ResponseBody?> {
             override fun onResponse(
@@ -231,6 +375,7 @@ class SchemeActivity : AppCompatActivity() {
             }
         })
     }
+
 
     private fun writeResponseBodyToDisk(body: ResponseBody): File? {
         return try {

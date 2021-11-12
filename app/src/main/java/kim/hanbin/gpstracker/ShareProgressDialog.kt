@@ -1,5 +1,6 @@
 package kim.hanbin.gpstracker
 
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.ContentValues
 import android.content.Context
@@ -16,6 +17,7 @@ import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.google.gson.JsonObject
@@ -37,6 +39,7 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.io.*
+import java.lang.StringBuilder
 import java.nio.charset.Charset
 import java.security.SecureRandom
 import java.util.*
@@ -73,25 +76,56 @@ class ShareProgressDialog(
         view.findViewById(R.id.progress)
     }
 
+    private val percent: TextView by lazy {
+        view.findViewById(R.id.percent)
+    }
+
     val job: Job
 
     val count = AtomicInteger(0)
 
     init {
         val dtf = DateTimeFormat.forPattern("yyyy-MM-dd HH-mm-ss")
-        val filename =
-            "compressedFile" + dtf.print(Date().time)
+        val random =  Random();
+        val buffer =  StringBuilder(18);
+        for (i in 0 until 18) {
+val n =48+random.nextInt(10)
+            buffer.append(n.toChar());
+        }
+        var filename =
+            "compressedFile${dtf.print(Date().time)}$buffer"
         val outputDir: File = context.cacheDir // context being the Activity pointer
 
-        var outputFile: File = File.createTempFile(
-            filename, ".json", outputDir
+        val outputFile: File = File.createTempFile(
+            filename, if(share != 2)".json" else ".enc", outputDir
         )
+        filename+=if(share != 2)".json" else ".enc"
+        val salt = ByteArray(32)
         val out = BufferedWriter(
             OutputStreamWriter(
-                FileOutputStream(outputFile),
+                if (share == 2) {
+                    val sr = SecureRandom()
+                    sr.nextBytes(salt)
+                    val iv = "9362469649674046"
+
+                    val spec = PBEKeySpec(pswd!!.toCharArray(), salt, 1000, 32 * 8)
+                    val key: SecretKey =
+                        SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec)
+                    val aes: Cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
+                    aes.init(Cipher.ENCRYPT_MODE, key, IvParameterSpec(iv.toByteArray()))
+
+
+                    val fos = FileOutputStream(outputFile)
+
+                    CipherOutputStream(fos, aes)
+                }else {
+                    FileOutputStream(outputFile)
+                },
                 Charset.forName("UTF8")
             )
         )
+
+
         out.write("[")
         show()
         var total = datas.size.toFloat()
@@ -110,10 +144,10 @@ class ShareProgressDialog(
                     obj.put("time", dtf.print(data.time!!.time))
 
                     when (data.eventNum) {
-                        3,5 -> {
+                        3, 5 -> {
                             obj.put("lat", data.lat)
                             obj.put("lng", data.lng)
-                            if(data.eventNum == 5){
+                            if (data.eventNum == 5) {
                                 val file = FileUtil.from(context, data.uri)
                                 val fis = FileInputStream(file)
                                 val bmp = BitmapFactory.decodeStream(fis)
@@ -143,12 +177,7 @@ class ShareProgressDialog(
                             obj.put("trackingSpeed", data.trackingSpeed)
                         }
                     }
-                    val tmpCount = count.incrementAndGet()
-                    launch(Dispatchers.Main) {
-                        val param = progressView.layoutParams as LinearLayout.LayoutParams
-                        param.weight = tmpCount / total
-                        progressView.layoutParams = param
-                    }
+
                     if (isComma)
                         out.write(",\n")
                     isComma = true
@@ -156,6 +185,14 @@ class ShareProgressDialog(
                     out.write(obj.toString())
                     if (count.get() % 100 == 0)
                         out.flush()
+                    val tmpCount = count.incrementAndGet()
+                    launch(Dispatchers.Main) {
+                        val param = progressView.layoutParams as LinearLayout.LayoutParams
+                        val progress = tmpCount / total
+                        param.weight = progress
+                        progressView.layoutParams = param
+                        percent.text = String.format("%.1f%%",progress*100)
+                    }
                     println("total : $total now : ${count.get()}")
 
 
@@ -163,51 +200,13 @@ class ShareProgressDialog(
                 out.write("]")
                 out.flush()
                 out.close()
-                val salt = ByteArray(32)
-                if (share == 2) {
-                    val sr = SecureRandom()
-                    sr.nextBytes(salt)
-                    val iv = "9362469649674046"
 
-                    val spec = PBEKeySpec(pswd!!.toCharArray(), salt, 1000, 32 * 8)
-                    val key: SecretKey =
-                        SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec)
-                    val aes: Cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-                    aes.init(Cipher.ENCRYPT_MODE, key, IvParameterSpec(iv.toByteArray()))
-
-                    val fis = FileInputStream(outputFile)
-                    outputFile = File.createTempFile(
-                        filename, ".enc", outputDir
-                    )
-                    val fos = FileOutputStream(outputFile)
-
-                    // Create cipher
-                    // Create cipher
-                    // Wrap the output stream
-                    // Wrap the output stream
-                    val cos = CipherOutputStream(fos, aes)
-                    // Write bytes
-                    // Write bytes
-                    var b: Int
-                    val d = ByteArray(2048)
-                    var count = 0
-                    while (fis.read(d).also { b = it } != -1) {
-                        cos.write(d, 0, b)
-                        println(count)
-                        if (++count % 10 == 0) {
-                            cos.flush()
-                        }
-                    }
-                    // Flush and close streams.
-                    // Flush and close streams.
-                    cos.flush()
-                    cos.close()
-                    fis.close()
-                }
                 //copyFileToDownloads(context, outputFile, filename, outputFile.length(), share == 2)
 
                 //보내는 코드
-
+                launch(Dispatchers.Main) {
+                    view.findViewById<TextView>(R.id.msg1).text = "여행기록을 서버로 전송중입니다. 잠시만 기다려 주세요."
+                }
                 val mapRequestBody = LinkedHashMap<String, RequestBody>()
                 val arrBody: ArrayList<MultipartBody.Part> = arrayListOf()
                 val requestBody =
@@ -222,15 +221,23 @@ class ShareProgressDialog(
                 val countingRequestBody =
                     CountingRequestBody(requestBody, object : CountingRequestBody.Listener {
                         override fun onRequestProgress(bytesWitten: Long, contentLength: Long) {
-                            Log.d(
+                            Log.e(
                                 this.javaClass.simpleName,
                                 "bytesWitten : $bytesWitten contentLength : $contentLength"
                             )
+                            (context as Activity).runOnUiThread {
+
+                                val param = progressView.layoutParams as LinearLayout.LayoutParams
+                                val progress = bytesWitten / contentLength.toFloat()
+                                param.weight = progress
+                                progressView.layoutParams = param
+                                percent.text = String.format("%.1f%%",progress*100)
+                            }
                         }
                     })
 
                 val body =
-                    MultipartBody.Part.createFormData("file", outputFile.name, countingRequestBody);
+                    MultipartBody.Part.createFormData("file", filename, countingRequestBody);
                 arrBody.add(body);
                 val res = retrofit.upload(mapRequestBody, arrBody)
                 res.enqueue(object : Callback<JsonObject> {
@@ -250,6 +257,7 @@ class ShareProgressDialog(
                                 Toast.LENGTH_LONG
                             ).show()
                         }
+                        dismiss()
                     }
 
                     override fun onFailure(call: Call<JsonObject>?, t: Throwable?) {
@@ -258,11 +266,11 @@ class ShareProgressDialog(
                             "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
                             Toast.LENGTH_LONG
                         ).show()
+                        dismiss()
 
                     }
                 })
 
-                dismiss()
 
             } catch (ce: CancellationException) {
                 // You can ignore or log this exception

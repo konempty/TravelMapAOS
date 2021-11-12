@@ -63,7 +63,7 @@ class TrackingMenuFragment : Fragment() {
                 }
             } else {
 
-                val dialog = AlertDialog.Builder(requireContext(), R.style.MyDialogTheme)
+                AlertDialog.Builder(requireContext(), R.style.MyDialogTheme)
                     .setMessage("여행기록을 끝내시겠습니까?")
                     .setPositiveButton("예") { dialogInterface: DialogInterface, i: Int ->
                         val dialog = TrackingNameDialog(requireContext())
@@ -92,9 +92,7 @@ class TrackingMenuFragment : Fragment() {
                         }
                     }
                     .setNegativeButton("아니요") { dialogInterface: DialogInterface, i: Int -> }
-                    .create()
-                dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT));
-                dialog.show()
+                    .create().show()
             }
 
         }

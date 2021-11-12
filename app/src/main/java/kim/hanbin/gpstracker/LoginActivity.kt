@@ -1,6 +1,9 @@
 package kim.hanbin.gpstracker
 
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.facebook.AccessToken
@@ -30,6 +33,7 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var googleSignInClient: GoogleSignInClient
     private lateinit var callbackManager: CallbackManager
     private lateinit var buttonFacebookLogin: LoginButton
+    private lateinit var popup: ProgressPopup
 
 
     var googleLoginResult =
@@ -64,26 +68,32 @@ class LoginActivity : AppCompatActivity() {
         callbackManager = CallbackManager.Factory.create()
 
         buttonFacebookLogin = LoginButton(this)
-        buttonFacebookLogin.setReadPermissions("email", "public_profile")
+        buttonFacebookLogin.setPermissions("email", "public_profile")
         buttonFacebookLogin.registerCallback(callbackManager, object :
             FacebookCallback<LoginResult> {
             override fun onSuccess(loginResult: LoginResult) {
                 handleFacebookAccessToken(loginResult.accessToken)
-                setResult()
             }
 
             override fun onCancel() {
-                setResult()
+                hideProgress()
             }
 
             override fun onError(error: FacebookException) {
+                Toast.makeText(
+                    this@LoginActivity,
+                    "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
+                    Toast.LENGTH_LONG
+                ).show()
                 setResult()
             }
         })
         binding.googleLogin.setOnClickListener {
+            showProgress()
             googleLoginResult.launch(googleSignInClient.signInIntent)
         }
         binding.appleLogin.setOnClickListener {
+            showProgress()
             val provider = OAuthProvider.newBuilder("apple.com")
             provider.scopes =
                 mutableListOf("email", "name")// Localize the Apple authentication screen in French.
@@ -101,10 +111,12 @@ class LoginActivity : AppCompatActivity() {
         }
 
         binding.facebookLogin.setOnClickListener {
+            showProgress()
             buttonFacebookLogin.performClick()
         }
 
         binding.twitterLogin.setOnClickListener {
+            showProgress()
             val provider = OAuthProvider.newBuilder("twitter.com")
 
             provider.addCustomParameter("locale", "ko")
@@ -121,6 +133,11 @@ class LoginActivity : AppCompatActivity() {
         }
 
 
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        callbackManager.onActivityResult(requestCode, resultCode, data);
     }
 
 
@@ -144,11 +161,37 @@ class LoginActivity : AppCompatActivity() {
     }
 
     fun setResult() {
+        hideProgress()
         if (mAuth.currentUser == null) {
             setResult(RESULT_CANCELED)
         } else {
             setResult(RESULT_OK)
         }
         finish()
+    }
+    fun showProgress() {
+        popup = ProgressPopup(this)
+        try {
+            popup.show()
+        } catch (e: IllegalArgumentException) {
+            Log.e(this.javaClass.simpleName, "showProgress IllegalArgumentException")
+        } catch (e: RuntimeException) {
+            Log.e(this.javaClass.simpleName, "showProgress RuntimeException")
+        } catch (e: Exception) {
+            Log.e(this.javaClass.simpleName, "showProgress Exception")
+        }
+    }
+
+
+    fun hideProgress() {
+        try {
+            popup.dismiss()
+        } catch (e: IllegalArgumentException) {
+            Log.e(this.javaClass.simpleName, "hideProgress IllegalArgumentException")
+        } catch (e: RuntimeException) {
+            Log.e(this.javaClass.simpleName, "hideProgress RuntimeException")
+        } catch (e: Exception) {
+            Log.e(this.javaClass.simpleName, "hideProgress Exception")
+        }
     }
 }

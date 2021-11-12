@@ -192,6 +192,10 @@ data class EventData(
 
 }
 
+data class TrackingInfo(val id: Long?=null,val userID:Long?=null,val trackingID:Long?=null,val isFriendShare:Boolean?=null){
+
+}
+
 class TrackingListData(
     val id: Long,
     val trackingNum: Int,

@@ -20,8 +20,15 @@ interface RetroService {
     @POST("loginProcess.do")
     fun login(@Query("token") token: String): Call<JsonObject>
 
-    @GET("delete_user.do")
-    fun delete_user(
+    @POST("logout.do")
+    fun logout(): Call<String>
+
+    @GET("loginCheck.do")
+    fun loginCheck(): Call<String>
+
+
+    @GET("deleteUser.do")
+    fun deleteUser(
     ): Call<JsonObject>
 
     @Multipart
@@ -36,5 +43,23 @@ interface RetroService {
 
     @GET("fileDownload.do")
     @Streaming
-    fun fileDownload(@Query("trackingNum") trackingNum: Int): Call<ResponseBody>
+    fun fileDownload(@Query("trackingNum") trackingNum: Long): Call<ResponseBody>
+
+    @POST("getUserId.do")
+    fun getUserId(@Query("userNickname") nickname: String): Call<String>
+
+    @POST("addFriendRequest.do")
+    fun addFriendRequest(@Query("id") id: Long): Call<String>
+
+    @POST("deleteFriend.do")
+    fun deleteFriend(@Query("id") id: Long): Call<String>
+
+    @GET("getFriendRequestedList.do")
+    fun getFriendRequestedList(): Call<JsonObject>
+
+    @GET("getFriendList.do")
+    fun getFriendList(): Call<JsonObject>
+
+    @GET("checkFriend.do")
+    fun checkFriend(@Query("id") id:Long): Call<String>
 }

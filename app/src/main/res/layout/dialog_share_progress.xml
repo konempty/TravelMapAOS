@@ -33,7 +33,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:lineSpacingExtra="6sp"
-            android:text="여행기록을 정리중입니다. 잠시만 기다려 주세요"
+            android:text="여행기록을 정리중입니다. 잠시만 기다려 주세요."
             android:textSize="14sp"
             android:textStyle="normal"
             app:layout_constraintLeft_toLeftOf="parent"
@@ -47,6 +47,7 @@
             android:layout_height="15dp"
             android:layout_marginTop="20dp"
             android:weightSum="1"
+            android:background="@drawable/round_et"
             app:layout_constraintLeft_toLeftOf="@id/msg1"
             app:layout_constraintTop_toBottomOf="@id/msg1"
             app:layout_constraintWidth_percent="0.83">
@@ -60,6 +61,18 @@
                 android:orientation="horizontal" />
         </LinearLayout>
 
+        <TextView
+            android:layout_marginTop="10dp"
+            android:id="@+id/percent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="0%"
+            android:gravity="center"
+            android:textSize="18sp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/progressView" />
+
         <Button
             android:id="@+id/cancel_button"
             android:layout_width="0dp"
@@ -71,7 +84,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/progressView"
+            app:layout_constraintTop_toBottomOf="@id/percent"
             app:layout_constraintWidth_percent="0.4" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </LinearLayout>

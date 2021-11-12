@@ -127,16 +127,12 @@ class SplashActivity : AppCompatActivity() {
                     }
                 }
             }
-            val dialog = AlertDialog.Builder(this, R.style.MyDialogTheme)
+            AlertDialog.Builder(this, R.style.MyDialogTheme)
                 .setTitle("권한 없음")
                 .setMessage("권한이 없습니다. 권한없이는 앱을 사용 할수 없습니다.")
                 .setPositiveButton(
                     "확인"
-                ) { dialogInterface, i -> finish() }.create()
-
-            dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-
-            dialog.show()
+                ) { dialogInterface, i -> finish() }.create().show()
         }
     }
 
@@ -146,7 +142,7 @@ class SplashActivity : AppCompatActivity() {
             startActivity(intent) //다음화면으로 넘어감
             finish()
         } else {
-            val dialog = AlertDialog.Builder(this, R.style.MyDialogTheme)
+            AlertDialog.Builder(this, R.style.MyDialogTheme)
                 .setTitle("권한요청")
                 .setMessage("정확한 위치 탐색을 위해선 백그라운드 실행에 동의를 해주세요.")
                 .setPositiveButton(
@@ -157,10 +153,7 @@ class SplashActivity : AppCompatActivity() {
                     intent.data = Uri.parse("package:$packageName")
                     startActivity(intent)
                     isBack = true
-                }.create()
-
-            dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            dialog.show()
+                }.create().show()
         }
     }
 

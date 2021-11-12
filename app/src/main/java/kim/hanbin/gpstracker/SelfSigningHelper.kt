@@ -41,7 +41,7 @@ class SelfSigningHelper private constructor() {
             caInput = CustomApplication.getAppContext().resources
                 .openRawResource(R.raw.travelmap)
             ca = cf.generateCertificate(caInput)
-            println("ca=" + (ca as X509Certificate).subjectDN)
+            //println("ca=" + (ca as X509Certificate).subjectDN)
             // Create a KeyStore containing our trusted CAs
             val keyStoreType: String = KeyStore.getDefaultType()
             val keyStore: KeyStore = KeyStore.getInstance(keyStoreType)
@@ -74,7 +74,7 @@ class SelfSigningHelper private constructor() {
             getInstance().tmf!!.trustManagers[0] as X509TrustManager
         )
         builder.hostnameVerifier { hostname, session ->
-            if (hostname!!.contentEquals("124.54.119.156")) {
+            if (hostname!!.contentEquals("119.69.202.23")) {
                 Log.d("test", "Approving certificate for host $hostname")
                 return@hostnameVerifier true
             } else {

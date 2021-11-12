@@ -16,19 +16,16 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class NicknameDialog(private val context: Context) {
+class AddFriendDialog(private val context: FriendActivity) {
     private val builder: AlertDialog.Builder by lazy {
         AlertDialog.Builder(context).setView(view)
     }
 
     private val view: View by lazy {
-        View.inflate(context, R.layout.dialog_nickname, null)
+        View.inflate(context, R.layout.dialog_add_friend, null)
     }
 
     private var dialog: AlertDialog? = null
-
-
-    private lateinit var okClickListener: View.OnClickListener
 
     val nicknameET: EditText by lazy {
         view.findViewById(R.id.nickname)
@@ -65,27 +62,68 @@ class NicknameDialog(private val context: Context) {
             nickname = nicknameET.text.toString()
             val res: Call<String> =
                 retrofit
-                    .checkNickname(nickname)
+                    .getUserId(nickname)
 
             res.enqueue(object : Callback<String> {
                 override fun onResponse(
                     call: Call<String>?,
                     response: Response<String>
                 ) {
-                    val result = response.body()!!
-                    if (result == "available") {
+                    val result = response.body()!!.toLong()
+                    if (result == -1L) {
 
-
-                        dismiss()
-                        okClickListener.onClick(it)
-                    } else {
                         Toast.makeText(
                             context,
-                            "중복된 닉네임입니다. 다른 닉네임을 입력해주세요.",
+                            "존재하지 않는 사용자입니다.",
                             Toast.LENGTH_LONG
                         ).show()
+                        hideProgress()
+                    } else {
+                       retrofit.addFriendRequest(result).enqueue(object:Callback<String>{
+                           override fun onResponse(call: Call<String>, response: Response<String>) {
+                               hideProgress()
+                               val result = response.body()!!
+                               when(result){
+                                   "alreadyRequested"->{
+                                       Toast.makeText(
+                                           context,
+                                           "이미 친구신청이 되어있습니다.",
+                                           Toast.LENGTH_LONG
+                                       ).show()
+                                   }
+                                   "success"->{
+                                       Toast.makeText(
+                                           context,
+                                           "신청되었습니다.",
+                                           Toast.LENGTH_SHORT
+                                       ).show()
+                                       dismiss()
+                                       context.refreshData()
+                                   }
+                                   else->{
+
+                                       Toast.makeText(
+                                           context,
+                                           "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
+                                           Toast.LENGTH_LONG
+                                       ).show()
+                                       context.finish()
+                                       MainActivity.instance?.logout()
+                                   }
+                               }
+                           }
+
+                           override fun onFailure(call: Call<String>, t: Throwable) {
+                               Toast.makeText(
+                                   context,
+                                   "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
+                                   Toast.LENGTH_LONG
+                               ).show()
+
+                               hideProgress()
+                           }
+                       })
                     }
-                    hideProgress()
                 }
 
                 override fun onFailure(call: Call<String>?, t: Throwable?) {
@@ -99,17 +137,10 @@ class NicknameDialog(private val context: Context) {
                 }
             })
         }
-        dialog?.setOnCancelListener {
-            //Toast.makeText(context, "닉네임을 설정해야 공유기능을 사용할 수 있습니다.", Toast.LENGTH_SHORT).show()
-        }
         dialog?.show()
     }
 
 
-    fun setOkListener(listener: View.OnClickListener): NicknameDialog {
-        okClickListener = listener
-        return this
-    }
 
 
     fun dismiss() {
