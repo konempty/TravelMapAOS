@@ -58,7 +58,6 @@ class RetrofitFactory {
         }
 
 
-
         fun getDownloadRetrofit(listener: (Float) -> Unit): RetroService {
             val gson = GsonBuilder().setLenient().create()
             return Retrofit.Builder()
@@ -74,16 +73,17 @@ class RetrofitFactory {
             val helper: SelfSigningHelper = SelfSigningHelper.getInstance()
             val builder = OkHttpClient.Builder()
 
-            helper.setSSLOkHttp(builder).cookieJar(JavaNetCookieJar(CookieManager())).addInterceptor { chain ->
-                val originalResponse =
-                    chain.proceed(chain.request())
-                originalResponse.newBuilder().body(
-                    ProgressResponseBody(
-                        originalResponse.body!!,
-                        onAttachmentDownloadUpdate
-                    )
-                ).build()
-            }
+            helper.setSSLOkHttp(builder).cookieJar(JavaNetCookieJar(CookieManager()))
+                .addInterceptor { chain ->
+                    val originalResponse =
+                        chain.proceed(chain.request())
+                    originalResponse.newBuilder().body(
+                        ProgressResponseBody(
+                            originalResponse.body!!,
+                            onAttachmentDownloadUpdate
+                        )
+                    ).build()
+                }
             return builder.build()
         }
 

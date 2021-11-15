@@ -3,8 +3,6 @@ package kim.hanbin.gpstracker
 import android.app.Activity
 import android.app.Application
 import android.content.Intent
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -24,13 +22,11 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.google.gson.JsonObject
-import com.google.gson.JsonParser
 import kim.hanbin.gpstracker.RetrofitFactory.Companion.retrofit
 import kim.hanbin.gpstracker.databinding.ActivityMainBinding
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.nio.charset.Charset
 import java.util.concurrent.Semaphore
 
 
@@ -163,7 +159,7 @@ class MainActivity : AppCompatActivity(), Application.ActivityLifecycleCallbacks
         }
         binding.friendListBtn.setOnClickListener {
             binding.drawer.closeDrawer(GravityCompat.START)
-            startActivity(Intent(this@MainActivity,FriendActivity::class.java))
+            startActivity(Intent(this@MainActivity, FriendActivity::class.java))
         }
         if (mAuth.currentUser != null) {
             showProgress()
@@ -181,7 +177,7 @@ class MainActivity : AppCompatActivity(), Application.ActivityLifecycleCallbacks
                                 response: Response<JsonObject?>
                             ) {
                                 hideProgress()
-                                val json =response.body()!!
+                                val json = response.body()!!
 
                                 if (json.get("success").asBoolean) {
                                     val nickname = json.get("result").asString
@@ -191,8 +187,9 @@ class MainActivity : AppCompatActivity(), Application.ActivityLifecycleCallbacks
                                         Toast.LENGTH_LONG
                                     ).show()
                                     setNickname(nickname)
-                                }else{
+                                } else {
                                     mAuth.signOut()
+                                    LoginManager.getInstance().logOut();
                                 }
 
                             }
@@ -208,6 +205,7 @@ class MainActivity : AppCompatActivity(), Application.ActivityLifecycleCallbacks
                                     Toast.LENGTH_LONG
                                 ).show()
                                 mAuth.signOut()
+                                LoginManager.getInstance().logOut();
                                 finish()
 
                             }
@@ -221,13 +219,15 @@ class MainActivity : AppCompatActivity(), Application.ActivityLifecycleCallbacks
                             Toast.LENGTH_SHORT
                         ).show()
                         mAuth.signOut()
+                        LoginManager.getInstance().logOut();
                         finish()
                     }
                 }
         }
 
     }
-    fun logout(){
+
+    fun logout() {
         retrofit.logout().enqueue(object : Callback<String> {
             override fun onResponse(call: Call<String>, response: Response<String>) {
                 binding.drawer.closeDrawer(GravityCompat.START)
@@ -260,7 +260,7 @@ class MainActivity : AppCompatActivity(), Application.ActivityLifecycleCallbacks
         LoginManager.getInstance().logOut();
     }
 
-    fun login(){
+    fun login() {
         showProgress()
         mAuth.currentUser!!.getIdToken(true)
             .addOnCompleteListener {
@@ -353,7 +353,11 @@ class MainActivity : AppCompatActivity(), Application.ActivityLifecycleCallbacks
 
                 } else {
                     hideProgress()
-                    Toast.makeText(this@MainActivity, "문제가 발생했습니다. 잠시후 다시 시도해주세요.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@MainActivity,
+                        "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
     }

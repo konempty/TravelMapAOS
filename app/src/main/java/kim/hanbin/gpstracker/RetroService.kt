@@ -39,7 +39,7 @@ interface RetroService {
     ): Call<JsonObject>
 
     @GET("deleteFile.do")
-    fun deleteFile(): Call<JsonObject>
+    fun deleteFile(@Query("trackingNum") trackingNum: Long): Call<JsonObject>
 
     @GET("fileDownload.do")
     @Streaming
@@ -60,6 +60,6 @@ interface RetroService {
     @GET("getFriendList.do")
     fun getFriendList(): Call<JsonObject>
 
-    @GET("checkFriend.do")
-    fun checkFriend(@Query("id") id:Long): Call<String>
+    @GET("checkPermission.do")
+    fun checkPermission(@Query("id") id: Long): Call<String>
 }

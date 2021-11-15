@@ -13,7 +13,6 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Base64
-import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
@@ -39,7 +38,6 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.io.*
-import java.lang.StringBuilder
 import java.nio.charset.Charset
 import java.security.SecureRandom
 import java.util.*
@@ -53,7 +51,7 @@ import javax.crypto.spec.PBEKeySpec
 
 
 class ShareProgressDialog(
-    context: Context,
+    context: TrackingListActivity,
     name: String,
     datas: List<EventData>,
     share: Int,
@@ -80,16 +78,17 @@ class ShareProgressDialog(
         view.findViewById(R.id.percent)
     }
 
+    val db: EventDao by lazy { InnerDB.getInstance(context) }
     val job: Job
 
     val count = AtomicInteger(0)
 
     init {
         val dtf = DateTimeFormat.forPattern("yyyy-MM-dd HH-mm-ss")
-        val random =  Random();
-        val buffer =  StringBuilder(18);
+        val random = Random();
+        val buffer = StringBuilder(18);
         for (i in 0 until 18) {
-val n =48+random.nextInt(10)
+            val n = 48 + random.nextInt(10)
             buffer.append(n.toChar());
         }
         var filename =
@@ -97,9 +96,9 @@ val n =48+random.nextInt(10)
         val outputDir: File = context.cacheDir // context being the Activity pointer
 
         val outputFile: File = File.createTempFile(
-            filename, if(share != 2)".json" else ".enc", outputDir
+            filename, if (share != 2) ".json" else ".enc", outputDir
         )
-        filename+=if(share != 2)".json" else ".enc"
+        filename += if (share != 2) ".json" else ".enc"
         val salt = ByteArray(32)
         val out = BufferedWriter(
             OutputStreamWriter(
@@ -118,7 +117,7 @@ val n =48+random.nextInt(10)
                     val fos = FileOutputStream(outputFile)
 
                     CipherOutputStream(fos, aes)
-                }else {
+                } else {
                     FileOutputStream(outputFile)
                 },
                 Charset.forName("UTF8")
@@ -191,7 +190,7 @@ val n =48+random.nextInt(10)
                         val progress = tmpCount / total
                         param.weight = progress
                         progressView.layoutParams = param
-                        percent.text = String.format("%.1f%%",progress*100)
+                        percent.text = String.format("%.1f%%", progress * 100)
                     }
                     println("total : $total now : ${count.get()}")
 
@@ -221,17 +220,17 @@ val n =48+random.nextInt(10)
                 val countingRequestBody =
                     CountingRequestBody(requestBody, object : CountingRequestBody.Listener {
                         override fun onRequestProgress(bytesWitten: Long, contentLength: Long) {
-                            Log.e(
-                                this.javaClass.simpleName,
-                                "bytesWitten : $bytesWitten contentLength : $contentLength"
-                            )
+                            /* Log.e(
+                                 this.javaClass.simpleName,
+                                 "bytesWitten : $bytesWitten contentLength : $contentLength"
+                             )*/
                             (context as Activity).runOnUiThread {
 
                                 val param = progressView.layoutParams as LinearLayout.LayoutParams
                                 val progress = bytesWitten / contentLength.toFloat()
                                 param.weight = progress
                                 progressView.layoutParams = param
-                                percent.text = String.format("%.1f%%",progress*100)
+                                percent.text = String.format("%.1f%%", progress * 100)
                             }
                         }
                     })
@@ -248,7 +247,18 @@ val n =48+random.nextInt(10)
                         val json = response.body()!!
                         if (json.get("success").asBoolean) {
 
-                            println(json.get("result").asInt)
+                            val id = json.get("result").asLong
+                            println(id)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                db.insert(
+                                    TrackingInfo(
+                                        datas.last().trackingNum,
+                                        -1,
+                                        id,
+                                        share == 1
+                                    )
+                                )
+                            }
                         } else {
                             println(json.get("result").asString)
                             Toast.makeText(
@@ -258,6 +268,7 @@ val n =48+random.nextInt(10)
                             ).show()
                         }
                         dismiss()
+                        context.refreshList()
                     }
 
                     override fun onFailure(call: Call<JsonObject>?, t: Throwable?) {

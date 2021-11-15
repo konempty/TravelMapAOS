@@ -235,6 +235,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#aa000000"
+        android:clickable="true"
         android:gravity="center"
         app:layout_anchor="@+id/constraintLayout2"
         app:layout_anchorGravity="center">

@@ -80,6 +80,7 @@ class LoginActivity : AppCompatActivity() {
             }
 
             override fun onError(error: FacebookException) {
+
                 Toast.makeText(
                     this@LoginActivity,
                     "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
@@ -169,6 +170,7 @@ class LoginActivity : AppCompatActivity() {
         }
         finish()
     }
+
     fun showProgress() {
         popup = ProgressPopup(this)
         try {

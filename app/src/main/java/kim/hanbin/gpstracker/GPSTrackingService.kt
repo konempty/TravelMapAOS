@@ -116,6 +116,9 @@ class GPSTrackingService : Service() {
                             pathColumn
                         )
                     val parent = path.replace(name, "")
+                    if (parent.contains("TravelMap")) {
+                        continue
+                    }
                     val media =
                         cursor.getInt(mediaColumn) == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO
                     val addedDate = cursor.getLong(addedColumn)

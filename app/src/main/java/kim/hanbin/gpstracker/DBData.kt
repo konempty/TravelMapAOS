@@ -6,6 +6,7 @@ import android.os.Build
 import android.provider.MediaStore
 import androidx.room.Entity
 import androidx.room.Ignore
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.google.android.gms.maps.model.LatLng
 import java.util.*
@@ -192,14 +193,21 @@ data class EventData(
 
 }
 
-data class TrackingInfo(val id: Long?=null,val userID:Long?=null,val trackingID:Long?=null,val isFriendShare:Boolean?=null){
-
-}
+@Entity(indices = [Index(value = ["trackingID"], unique = true)])
+data class TrackingInfo(
+    @PrimaryKey val id: Int? = null,
+    val userID: Long? = null,
+    val trackingID: Long? = null,
+    val isFriendShare: Boolean? = null
+)
 
 class TrackingListData(
     val id: Long,
     val trackingNum: Int,
     val name: String,
+    val userID: Long?,
+    val trackingID: Long?,
+    val isFriendShare: Boolean?,
     val startTime: Date,
     val endTime: Date
 )

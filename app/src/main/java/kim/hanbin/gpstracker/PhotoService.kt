@@ -131,6 +131,9 @@ class PhotoService : Service() {
         imageList.clear()
         for (photo in list) {
             val parent = photo.path
+            if (parent?.contains("TravelMap") == true) {
+                continue
+            }
 
             val date = Date(photo.modifyTime!! / 86400 * 86400000) // 날짜로 구별할수 있도록 시분초를 없앤다
             if (!imageListMap.containsKey(parent)) {

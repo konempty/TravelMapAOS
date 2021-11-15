@@ -16,12 +16,21 @@ interface EventDao {
     @Query("DELETE from eventdata where id = :id")
     fun delete(id: Long)
 
+    @Query("DELETE from eventdata")
+    fun delete1()
+
+    @Query("DELETE from TrackingInfo")
+    fun delete2()
+
     @Query("DELETE from eventdata where pictureId = :id")
     fun deletePicture(id: Long)
 
 
     @Query("DELETE from eventdata where trackingNum = :trackingNum")
     fun deleteLogs(trackingNum: Int)
+
+    @Query("DELETE from trackinginfo where id = :trackingNum")
+    fun deleteTrackingInfo(trackingNum: Int)
 
 
     @Query("SELECT count(*) FROM eventdata")
@@ -34,14 +43,19 @@ interface EventDao {
     @Query("SELECT max(trackingNum) FROM eventdata")
     fun getTrackingNum(): Int?
 
-    @Transaction
-    fun singleTransaction(dataList: List<EventData>) {
-        dataList.forEach {
-            insert(it)
-        }
-    }
+    @Query("SELECT max(id) FROM trackinginfo where trackingID = :trackingID")
+    fun getTrackingInfo(trackingID: Long): Int?
 
-    @Query("SELECT a.trackingNum, name,b.startTime,b.endTime,id FROM eventdata a,(Select trackingNum, min(time) as startTime, max(time) as endTime FROM eventdata group by trackingNum) b on eventNum = 2 and a.trackingNum = b.trackingNum ")
+    @Insert
+    fun singleTransaction(dataList: List<EventData>)
+    /*
+    *
+    val userID: Long?,
+    val trackingID: Long?,
+    val isFriendShare: Boolean?,
+    * */
+
+    @Query("SELECT e.trackingNum, name,a.startTime,a.endTime,e.id,t.userID,t.trackingID,t.isFriendShare FROM eventdata e left join trackinginfo t on e.trackingNum = t.id,(Select trackingNum, min(time) as startTime, max(time) as endTime FROM eventdata group by trackingNum) a on eventNum = 2 and e.trackingNum = a.trackingNum ")
     fun getAllTrackList(): List<TrackingListData>
 
 
@@ -51,7 +65,11 @@ interface EventDao {
     @Query("UPDATE eventdata SET name = :name WHERE id = :id")
     fun updateTrckingData(name: String, id: Long)
 
+    @Insert
+    fun insert(data: TrackingInfo)
 
+    @Insert
+    fun insertShareData(data: TrackingInfo, dataList: List<EventData>) : List<Int>
 }
 
 @Dao
@@ -89,6 +107,4 @@ interface PhotoDataDao {
         }
     }
 
-    /* @Query("select *,count(*) as cnt from Waybill where waybillnum = :waybillnum")
-     fun findOverlap(waybillnum: String): CountObject*/
 }

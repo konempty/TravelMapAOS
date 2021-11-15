@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Size
 import android.view.View
+import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.annotation.NonNull
@@ -97,7 +98,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             override fun onSlide(bottomSheet: View, slideOffset: Float) {
                 // do stuff during the actual drag event for example
                 // animating a background color change based on the offset
-
                 // or for example hidding or showing a fab
 
             }
@@ -110,6 +110,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
 
             bottomSheetBehavior!!.peekHeight = binding.top.height
+            bottomSheetBehavior!!.isDraggable = true
             /*param = margin.layoutParams
             param.height = top.height
             margin.layoutParams = param*/
@@ -162,6 +163,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             changeSpeed(3)
         }
         changeColor(0)
+
     }
 
 
@@ -222,22 +224,13 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
 
-        /*
-        그것도 되고 다른 방법은 until도 자주 써
-
-         0..n은 0부터 n까지 라는 의미 인데
-         0 until n 은 0부터 n-1까지 라는 의미야
-
-         for(i=0;i<10;i++) -> for(i in 0 until 10)
-         이런식
-         */
         val uiSetting = mMap.uiSettings
         uiSetting.isTiltGesturesEnabled = false
         uiSetting.isRotateGesturesEnabled = false
         uiSetting.isZoomGesturesEnabled = false
         uiSetting.isScrollGesturesEnabled = false
         uiSetting.isCompassEnabled = false
-        //mMap.loa
+
     }
 
     fun initCluster() {
@@ -297,7 +290,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
                             }
                         } catch (e: Exception) {
-
+                            e.printStackTrace()
                         }
                     }
                 }
@@ -329,8 +322,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 polylineOptions = PolylineOptions()
                 clusterManager.cluster()
                 getStartPoint()
-
-                binding.cover.visibility = View.GONE
+                val parent = binding.cover.parent as ViewGroup
+                parent.removeView(binding.cover)
             }
         }
 

@@ -25,7 +25,7 @@ class FriendActivity : AppCompatActivity() {
         binding.friendList.adapter = adapter
         refreshData()
         binding.addFriendBtn.setOnClickListener {
-AddFriendDialog(this).show()
+            AddFriendDialog(this).show()
         }
         binding.toggleBtn.setOnClickListener {
             binding.toggleBtn.text = if (isFiendList) {

@@ -1,7 +1,6 @@
 package kim.hanbin.gpstracker
 
 import android.app.AlertDialog
-import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.text.Editable
@@ -79,50 +78,53 @@ class AddFriendDialog(private val context: FriendActivity) {
                         ).show()
                         hideProgress()
                     } else {
-                       retrofit.addFriendRequest(result).enqueue(object:Callback<String>{
-                           override fun onResponse(call: Call<String>, response: Response<String>) {
-                               hideProgress()
-                               val result = response.body()!!
-                               when(result){
-                                   "alreadyRequested"->{
-                                       Toast.makeText(
-                                           context,
-                                           "이미 친구신청이 되어있습니다.",
-                                           Toast.LENGTH_LONG
-                                       ).show()
-                                   }
-                                   "success"->{
-                                       Toast.makeText(
-                                           context,
-                                           "신청되었습니다.",
-                                           Toast.LENGTH_SHORT
-                                       ).show()
-                                       dismiss()
-                                       context.refreshData()
-                                   }
-                                   else->{
+                        retrofit.addFriendRequest(result).enqueue(object : Callback<String> {
+                            override fun onResponse(
+                                call: Call<String>,
+                                response: Response<String>
+                            ) {
+                                hideProgress()
+                                val result = response.body()!!
+                                when (result) {
+                                    "alreadyRequested" -> {
+                                        Toast.makeText(
+                                            context,
+                                            "이미 친구신청이 되어있습니다.",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                    "success" -> {
+                                        Toast.makeText(
+                                            context,
+                                            "신청되었습니다.",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        dismiss()
+                                        context.refreshData()
+                                    }
+                                    else -> {
 
-                                       Toast.makeText(
-                                           context,
-                                           "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
-                                           Toast.LENGTH_LONG
-                                       ).show()
-                                       context.finish()
-                                       MainActivity.instance?.logout()
-                                   }
-                               }
-                           }
+                                        Toast.makeText(
+                                            context,
+                                            "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                        context.finish()
+                                        MainActivity.instance?.logout()
+                                    }
+                                }
+                            }
 
-                           override fun onFailure(call: Call<String>, t: Throwable) {
-                               Toast.makeText(
-                                   context,
-                                   "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
-                                   Toast.LENGTH_LONG
-                               ).show()
+                            override fun onFailure(call: Call<String>, t: Throwable) {
+                                Toast.makeText(
+                                    context,
+                                    "문제가 발생했습니다. 잠시후 다시 시도해주세요.",
+                                    Toast.LENGTH_LONG
+                                ).show()
 
-                               hideProgress()
-                           }
-                       })
+                                hideProgress()
+                            }
+                        })
                     }
                 }
 
@@ -139,8 +141,6 @@ class AddFriendDialog(private val context: FriendActivity) {
         }
         dialog?.show()
     }
-
-
 
 
     fun dismiss() {

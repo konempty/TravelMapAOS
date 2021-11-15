@@ -53,18 +53,18 @@ class FriendListAdapter(val context: FriendActivity) : BaseAdapter() {
         convertView!!.findViewById<TextView>(R.id.nickname).text = user.nickname
 
         val acceptBtn = convertView.findViewById<Button>(R.id.acceptBtn)
-        if(isFriendList){
+        if (isFriendList) {
             acceptBtn.visibility = View.GONE
-        }else{
+        } else {
             acceptBtn.visibility = View.VISIBLE
             acceptBtn.setOnClickListener {
                 context.showProgress()
-                retrofit.addFriendRequest(user.id).enqueue(object:Callback<String>{
+                retrofit.addFriendRequest(user.id).enqueue(object : Callback<String> {
                     override fun onResponse(call: Call<String>, response: Response<String>) {
                         val result = response.body()!!
                         context.hideProgress()
-                        when(result){
-                            "alreadyRequested"->{
+                        when (result) {
+                            "alreadyRequested" -> {
                                 Toast.makeText(
                                     context,
                                     "이미 친구신청이 되어있습니다.",
@@ -72,7 +72,7 @@ class FriendListAdapter(val context: FriendActivity) : BaseAdapter() {
                                 ).show()
                                 context.refreshData()
                             }
-                            "success"->{
+                            "success" -> {
                                 Toast.makeText(
                                     context,
                                     "친구가 되었습니다.",
@@ -80,7 +80,7 @@ class FriendListAdapter(val context: FriendActivity) : BaseAdapter() {
                                 ).show()
                                 context.refreshData()
                             }
-                            else->{
+                            else -> {
 
                                 Toast.makeText(
                                     context,
@@ -104,12 +104,14 @@ class FriendListAdapter(val context: FriendActivity) : BaseAdapter() {
                 })
             }
         }
-        convertView.findViewById<ConstraintLayout>(R.id.background).setBackgroundColor(if(user.isPartially){
-           Color.GRAY
-        }else{
-            ContextCompat.getColor(context, R.color.dark)
+        convertView.findViewById<ConstraintLayout>(R.id.background).setBackgroundColor(
+            if (user.isPartially) {
+                Color.GRAY
+            } else {
+                ContextCompat.getColor(context, R.color.dark)
 
-        })
+            }
+        )
         convertView.findViewById<Button>(R.id.deleteBtn).setOnClickListener {
             AlertDialog.Builder(context, R.style.MyDialogTheme)
                 .setTitle("친구 리스트")
