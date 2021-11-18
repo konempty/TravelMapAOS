@@ -333,7 +333,7 @@ class SchemeActivity : AppCompatActivity() {
                                     })
                             }.setNegativeButton("아니요") { dialg, i ->
                                 finish()
-                            }.create().show()
+                            }.setCancelable(false).create().show()
 
                     }
                     else -> {
@@ -424,7 +424,7 @@ class SchemeActivity : AppCompatActivity() {
             // todo change the file location/name according to your needs
 
             val outputFile: File = File.createTempFile(
-                filename, if (shareNum == 2) ".enc" else ".json", outputDir
+                filename+"_temp", if (shareNum == 2) ".enc" else ".json", outputDir
             )
             var inputStream: InputStream? = null
             var outputStream: OutputStream? = null
@@ -652,7 +652,7 @@ class SchemeActivity : AppCompatActivity() {
 
         val fis = FileInputStream(file)
         val outputFile = File.createTempFile(
-            filename, ".json", outputDir
+            filename+"_temp", ".json", outputDir
         )
         val fos = FileOutputStream(outputFile)
         runOnUiThread {

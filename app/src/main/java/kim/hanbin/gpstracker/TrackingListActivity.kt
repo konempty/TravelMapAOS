@@ -27,7 +27,6 @@ import java.io.*
 import java.text.SimpleDateFormat
 import java.util.*
 
-
 class TrackingListActivity : AppCompatActivity() {
 
     private var mBinding: ActivityTrackingListBinding? = null
@@ -76,6 +75,9 @@ class TrackingListActivity : AppCompatActivity() {
                 actions.add("이름변경")
                 actions.add(if (item.userID == -1L) "여행 공유 취소" else "여행 공유")
             }
+            if(item.trackingID != null){
+                actions.add("여행 공유 링크 가져오기")
+            }
 
             val builder: AlertDialog.Builder = AlertDialog.Builder(this, R.style.MyDialogTheme)
 
@@ -83,6 +85,18 @@ class TrackingListActivity : AppCompatActivity() {
             builder.setItems(
                 actions.toTypedArray()
             ) { dialog, i ->
+                if(i == actions.size-1&&item.trackingID != null){
+
+                    val sendIntent: Intent = Intent().apply {
+                        action = Intent.ACTION_SEND
+                        putExtra(Intent.EXTRA_TEXT, "https://119.69.202.23/browse.do?id=${item.trackingID}")
+                        type = "text/plain"
+                    }
+
+                    val shareIntent = Intent.createChooser(sendIntent, null)
+                    startActivity(shareIntent)
+                    return@setItems
+                }
                 when (i) {
                     0 -> {
                         AlertDialog.Builder(this, R.style.MyDialogTheme)

@@ -69,7 +69,7 @@ interface EventDao {
     fun insert(data: TrackingInfo)
 
     @Insert
-    fun insertShareData(data: TrackingInfo, dataList: List<EventData>) : List<Int>
+    fun insertShareData(data: TrackingInfo, dataList: List<EventData>)
 }
 
 @Dao
