@@ -25,7 +25,10 @@ import com.google.maps.android.clustering.ClusterItem
 import com.google.maps.android.clustering.ClusterManager
 import com.google.maps.android.clustering.view.DefaultClusterRenderer
 import kim.hanbin.gpstracker.databinding.ActivityMapsBinding
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import java.io.FileNotFoundException
 
 class MapFragment : Fragment(), OnMapReadyCallback {
@@ -63,7 +66,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
         // Add a marker in Sydney and move the camera
-        clusterManager = ClusterManager(context!!, mMap)
+        clusterManager = ClusterManager(requireContext(), mMap)
 
         // Point the map's listeners at the listeners implemented by the cluster
         // manager.
@@ -97,7 +100,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         initCluster()
 
         clusterManager.renderer =
-            CustomMapClusterRenderer(context!!, mMap!!, clusterManager, binding.markerView)
+            CustomMapClusterRenderer(requireContext(), mMap!!, clusterManager, binding.markerView)
 
         val uiSetting = mMap!!.uiSettings
         uiSetting.isTiltGesturesEnabled = false
@@ -130,7 +133,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
             if (PhotoService.galleryPlace.isNotEmpty())
                 MainScope().launch {
 
-                    mMap?.moveCamera(CameraUpdateFactory.newLatLng(PhotoService.galleryPlace.last().latLng))
+                    mMap?.moveCamera(CameraUpdateFactory.newLatLng(PhotoService.galleryPlace.last().latLng!!))
 
                 }
             for (item in PhotoService.galleryPlace) {
@@ -160,7 +163,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
                         CoroutineScope(Dispatchers.IO).launch {
 
-                            val db = InnerDB.getPhotoInstance(context!!)
+                            val db = InnerDB.getPhotoInstance(requireContext())
                             db.delete(item.id!!)
 
                             PhotoService.galleryPlace = db.getGaleryPlace()
@@ -224,7 +227,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
         }
 
-        private fun getClusterIcon(cluster: Cluster<MyItem>): BitmapDescriptor? {
+        private fun getClusterIcon(cluster: Cluster<MyItem>): BitmapDescriptor {
             val markerItem: MyItem =
                 cluster.items.sortedWith(compareBy<MyItem> { it.item.modifyTime }).last() as MyItem
 
@@ -254,7 +257,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
             }
             // println(cluster.size)
-            return BitmapDescriptorFactory.fromBitmap(loadBitmapFromView(view))
+            return BitmapDescriptorFactory.fromBitmap(loadBitmapFromView(view)!!)
         }
 
 
@@ -267,7 +270,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
             count10.visibility = View.INVISIBLE
             count100.visibility = View.INVISIBLE
             count10000.visibility = View.INVISIBLE
-            markerOptions.icon(BitmapDescriptorFactory.fromBitmap(loadBitmapFromView(view)))
+            markerOptions.icon(BitmapDescriptorFactory.fromBitmap(loadBitmapFromView(view)!!))
         }
 
         override fun onClusterItemUpdated(item: MyItem, marker: Marker) {
@@ -278,7 +281,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
             count10.visibility = View.INVISIBLE
             count100.visibility = View.INVISIBLE
             count10000.visibility = View.INVISIBLE
-            marker.setIcon(BitmapDescriptorFactory.fromBitmap(loadBitmapFromView(view)))
+            marker.setIcon(BitmapDescriptorFactory.fromBitmap(loadBitmapFromView(view)!!))
         }
 
         fun loadBitmapFromView(view: View): Bitmap? {

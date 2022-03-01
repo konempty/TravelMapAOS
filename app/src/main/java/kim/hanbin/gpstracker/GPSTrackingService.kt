@@ -424,7 +424,10 @@ class GPSTrackingService : Service() {
         builder.setWhen(0)
         builder.setShowWhen(false)
         val notificationIntent = Intent(this, MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0)
+        val flag =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0
+
+        val pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, flag)
         builder.setContentIntent(pendingIntent)
         val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

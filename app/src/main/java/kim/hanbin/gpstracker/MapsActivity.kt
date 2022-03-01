@@ -31,7 +31,6 @@ import kim.hanbin.gpstracker.databinding.ActivityMapsBinding
 import kotlinx.coroutines.*
 import java.io.FileNotFoundException
 import java.text.SimpleDateFormat
-import java.util.*
 import kotlin.math.acos
 import kotlin.math.cos
 import kotlin.math.sin
@@ -373,10 +372,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
                                     delay((500 / speed).toLong())
                                 }
-                                CameraPosition.Builder().target(item.latLng).bearing(angle)
+                                CameraPosition.Builder().target(item.latLng!!).bearing(angle)
                                     .zoom(zoomLevels[zoomlevel]).tilt(90F)
                             } else {
-                                CameraPosition.Builder().target(item.latLng)
+                                CameraPosition.Builder().target(item.latLng!!)
                             }.build()
                         )
                         val animateTime =
@@ -437,7 +436,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
                 } else {
                     CameraPosition.Builder()
-                }.target(item.latLng).build()
+                }.target(item.latLng!!).build()
             )
             mMap.moveCamera(cameraPosition)
             lastLoc = item.latLng!!
@@ -465,7 +464,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             val item2 = trackingLogs[idx]
             if (item2.eventNum == 3) {
                 item = item2
-                break;
+                break
             }
             nextIdx--
         }
@@ -486,7 +485,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                                 prevItem.lng!!
                             )
                         if (isFound[2]) {
-                            break;
+                            break
                         }
                     }
                 } else {
@@ -520,7 +519,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
                 } else {
                     CameraPosition.Builder()
-                }.target(prevItem.latLng).build()
+                }.target(prevItem.latLng!!).build()
             )
             mMap.moveCamera(cameraPosition)
             lastLoc = prevItem.latLng!!
@@ -661,7 +660,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
             }
             // println(cluster.size)
-            return BitmapDescriptorFactory.fromBitmap(loadBitmapFromView(view))
+            return BitmapDescriptorFactory.fromBitmap(loadBitmapFromView(view)!!)
         }
 
 
@@ -674,7 +673,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             binding.count10.visibility = View.INVISIBLE
             binding.count100.visibility = View.INVISIBLE
             binding.count10000.visibility = View.INVISIBLE
-            markerOptions.icon(BitmapDescriptorFactory.fromBitmap(loadBitmapFromView(view)))
+            markerOptions.icon(BitmapDescriptorFactory.fromBitmap(loadBitmapFromView(view)!!))
         }
 
         override fun onClusterItemUpdated(item: MyItem, marker: Marker) {
@@ -685,7 +684,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             binding.count10.visibility = View.INVISIBLE
             binding.count100.visibility = View.INVISIBLE
             binding.count10000.visibility = View.INVISIBLE
-            marker.setIcon(BitmapDescriptorFactory.fromBitmap(loadBitmapFromView(view)))
+            marker.setIcon(BitmapDescriptorFactory.fromBitmap(loadBitmapFromView(view)!!))
         }
 
 
@@ -749,7 +748,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         for (i in nextIdx - 1 until trackingLogs.size) {
             if (trackingLogs[i].eventNum == 3) {
                 destLoc = trackingLogs[i].latLng
-                break;
+                break
             }
         }
         if (destLoc != null) {

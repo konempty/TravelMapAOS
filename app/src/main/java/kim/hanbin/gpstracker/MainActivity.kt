@@ -77,7 +77,7 @@ class MainActivity : AppCompatActivity(), Application.ActivityLifecycleCallbacks
                 changeFragment(i)
             }
         }
-        binding.pager.isUserInputEnabled = false;
+        binding.pager.isUserInputEnabled = false
         binding.pager.setPageTransformer(null)
         binding.pager.animation = null
         instance = this
@@ -90,11 +90,11 @@ class MainActivity : AppCompatActivity(), Application.ActivityLifecycleCallbacks
 
             if (MyPreference.trackingState != 1) {
                 if (GPSTrackingService.instance == null) {
-                    val i = Intent(this, GPSTrackingService::class.java);
+                    val i = Intent(this, GPSTrackingService::class.java)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        startForegroundService(i);
+                        startForegroundService(i)
                     } else {
-                        startService(i);
+                        startService(i)
                     }
                 }
             }
@@ -189,7 +189,7 @@ class MainActivity : AppCompatActivity(), Application.ActivityLifecycleCallbacks
                                     setNickname(nickname)
                                 } else {
                                     mAuth.signOut()
-                                    LoginManager.getInstance().logOut();
+                                    LoginManager.getInstance().logOut()
                                 }
 
                             }
@@ -205,7 +205,7 @@ class MainActivity : AppCompatActivity(), Application.ActivityLifecycleCallbacks
                                     Toast.LENGTH_LONG
                                 ).show()
                                 mAuth.signOut()
-                                LoginManager.getInstance().logOut();
+                                LoginManager.getInstance().logOut()
                                 finish()
 
                             }
@@ -219,7 +219,7 @@ class MainActivity : AppCompatActivity(), Application.ActivityLifecycleCallbacks
                             Toast.LENGTH_SHORT
                         ).show()
                         mAuth.signOut()
-                        LoginManager.getInstance().logOut();
+                        LoginManager.getInstance().logOut()
                         finish()
                     }
                 }
@@ -228,7 +228,9 @@ class MainActivity : AppCompatActivity(), Application.ActivityLifecycleCallbacks
     }
 
     fun logout() {
+
         retrofit.logout().enqueue(object : Callback<String> {
+
             override fun onResponse(call: Call<String>, response: Response<String>) {
                 binding.drawer.closeDrawer(GravityCompat.START)
                 if (response.body() == "success") {
@@ -257,7 +259,7 @@ class MainActivity : AppCompatActivity(), Application.ActivityLifecycleCallbacks
             }
         })
         mAuth.signOut()
-        LoginManager.getInstance().logOut();
+        LoginManager.getInstance().logOut()
     }
 
     fun login() {
